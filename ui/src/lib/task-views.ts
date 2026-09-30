@@ -124,3 +124,27 @@ export function saveLastTaskView(key: TaskViewKey): void {
     /* Navigation still works without storage; the default view just returns. */
   }
 }
+
+/**
+ * Query params that only the organization task list understands. A deep link
+ * carrying one of these (the dashboard's "assigned to me", a workspace
+ * drill-in, a search hand-off) must not land on a My-work view, so it resolves
+ * to `All tasks` instead of the user's last-used view.
+ */
+export const ORGANIZATION_SCOPED_PARAMS = [
+  "assignee",
+  "workspace",
+  "participantAgentId",
+  "q",
+] as const;
+
+/** Resolves which view a `/issues` visit opens. */
+export function resolveInitialTaskView(
+  requested: string | null,
+  hasOrganizationScopedParam: boolean,
+  lastUsed: TaskViewKey,
+): TaskViewKey {
+  const explicit = normalizeTaskViewKey(requested);
+  if (explicit) return explicit;
+  return hasOrganizationScopedParam ? "all" : lastUsed;
+}

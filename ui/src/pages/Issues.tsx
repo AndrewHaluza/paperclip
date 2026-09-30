@@ -23,9 +23,11 @@ import { useDialogActions } from "../context/DialogContext";
 import { useInboxBadge } from "../hooks/useInboxBadge";
 import { Inbox } from "./Inbox";
 import {
+  ORGANIZATION_SCOPED_PARAMS,
   TASK_VIEW_PARAM,
   loadLastTaskView,
   normalizeTaskViewKey,
+  resolveInitialTaskView,
   saveLastTaskView,
   taskView,
   type TaskViewKey,
@@ -80,24 +82,6 @@ export function buildIssuesSearchUrl(currentHref: string, search: string): strin
 }
 
 /**
- * Query params that only the organization task list understands. A deep link
- * carrying one of these (the dashboard's "assigned to me", a workspace drill-in,
- * a search hand-off) must not land on a My-work view, so it resolves to
- * `All tasks` instead of the user's last-used view. PAP-670.
- */
-const ORGANIZATION_SCOPED_PARAMS = ["assignee", "workspace", "participantAgentId", "q"] as const;
-
-export function resolveInitialTaskView(
-  requested: string | null,
-  hasOrganizationScopedParam: boolean,
-  lastUsed: TaskViewKey,
-): TaskViewKey {
-  const explicit = normalizeTaskViewKey(requested);
-  if (explicit) return explicit;
-  return hasOrganizationScopedParam ? "all" : lastUsed;
-}
-
-/**
  * Tasks — the single task surface after PAP-670 merged Inbox into it.
  *
  * This component only resolves `?view=` to a view and hands off: My-work views
@@ -138,10 +122,12 @@ function StreamlinedTasks() {
   // brought the user here.
   useEffect(() => {
     if (normalizeTaskViewKey(requestedView)) return;
-    const next = new URLSearchParams(searchParams);
-    next.set(TASK_VIEW_PARAM, view);
-    setSearchParams(next, { replace: true });
-  }, [requestedView, view, searchParams, setSearchParams]);
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set(TASK_VIEW_PARAM, view);
+      return next;
+    }, { replace: true });
+  }, [requestedView, view, setSearchParams]);
 
   const selectView = useCallback((next: TaskViewKey) => {
     saveLastTaskView(next);

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { resolveInitialTaskView } from "../pages/Issues";
 import {
   DEFAULT_TASK_VIEW,
   TASK_VIEW_GROUPS,
   TASK_VIEW_KEYS,
   isTaskViewKey,
   normalizeTaskViewKey,
+  resolveInitialTaskView,
   taskView,
   taskViewForInboxTab,
   taskViewPath,

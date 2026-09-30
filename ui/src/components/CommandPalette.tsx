@@ -358,9 +358,9 @@ export function CommandPalette() {
             <LayoutDashboard className="mr-2 h-4 w-4" />
             Dashboard
           </CommandItem>
-          <CommandItem onSelect={() => go("/inbox")}>
+          <CommandItem onSelect={() => go("/issues?view=mine")}>
             <Inbox className="mr-2 h-4 w-4" />
-            Inbox
+            My work
           </CommandItem>
           <CommandItem onSelect={() => go("/issues")}>
             <CircleDot className="mr-2 h-4 w-4" />
