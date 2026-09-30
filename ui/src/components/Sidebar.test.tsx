@@ -78,8 +78,10 @@ vi.mock("../api/instanceSettings", () => ({
   instanceSettingsApi: mockInstanceSettingsApi,
 }));
 
+const mockInboxBadge = vi.hoisted(() => ({ inbox: 0, failedRuns: 0 }));
+
 vi.mock("../hooks/useInboxBadge", () => ({
-  useInboxBadge: () => ({ inbox: 0, failedRuns: 0 }),
+  useInboxBadge: () => mockInboxBadge,
 }));
 
 vi.mock("@/plugins/slots", () => ({
@@ -112,6 +114,12 @@ vi.mock("./SidebarProjects", () => ({
 
 vi.mock("./SidebarStarredProjects", () => ({
   SidebarStarredProjects: () => <div data-testid="sidebar-starred-projects" />,
+}));
+
+vi.mock("./SidebarAgentChats", () => ({
+  SidebarAgentChats: ({ nested }: { nested?: boolean }) => (
+    <div data-testid="sidebar-agent-chats" data-nested={String(nested === true)}>Agent chats</div>
+  ),
 }));
 
 vi.mock("./SidebarRecentTasks", () => ({
@@ -158,6 +166,8 @@ describe("Sidebar", () => {
     mockSidebar.collapsed = false;
     mockSidebar.collapseLocked = false;
     mockSidebar.peeking = false;
+    mockInboxBadge.inbox = 0;
+    mockInboxBadge.failedRuns = 0;
   });
 
   afterEach(() => {
@@ -323,7 +333,7 @@ describe("Sidebar", () => {
     });
   });
 
-  it("renders plugin sidebar slots in Work below Workspaces", async () => {
+  it("renders plugin sidebar slots in Work below the static Work rows", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: true });
     const root = await renderSidebar();
 
@@ -332,12 +342,12 @@ describe("Sidebar", () => {
     expect(sidebarSlot?.textContent).toContain("Plugin slot outlet");
     const workSectionContainer = sidebarSlot?.parentElement?.parentElement;
     const workText = workSectionContainer?.textContent ?? "";
-    expect(workText).toContain("Work");
-    expect(workText).toContain("Workspaces");
-    expect(workText.indexOf("Workspaces")).toBeLessThan(workText.indexOf("Plugin slot outlet"));
+    expect(workText).toContain("Tasks");
+    expect(workText).toContain("Artifacts");
+    expect(workText.indexOf("Artifacts")).toBeLessThan(workText.indexOf("Plugin slot outlet"));
 
     const primaryNavText = container.querySelector("nav > div:first-child")?.textContent ?? "";
-    expect(primaryNavText).toContain("Inbox");
+    expect(primaryNavText).toContain("Dashboard");
     expect(primaryNavText).not.toContain("Plugin slot outlet");
 
     flushSync(() => {
@@ -345,11 +355,60 @@ describe("Sidebar", () => {
     });
   });
 
-  it("does not flash the Workspaces link while experimental settings are loading", async () => {
-    mockInstanceSettingsApi.getExperimental.mockImplementation(() => new Promise(() => {}));
+  it("does not render Workspaces anywhere in the nav, even with isolated workspaces on (PAP-670)", async () => {
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: true });
     const root = await renderSidebar();
 
     expect(container.textContent).not.toContain("Workspaces");
+    expect([...container.querySelectorAll("a")].some((anchor) => anchor.getAttribute("href") === "/workspaces")).toBe(false);
+
+    flushSync(() => {
+      root.unmount();
+    });
+  });
+
+  it("drops the Inbox row and moves its unread badge onto Tasks (PAP-670)", async () => {
+    mockInboxBadge.inbox = 7;
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: false });
+    const root = await renderSidebar();
+
+    expect([...container.querySelectorAll("a")].some((anchor) => anchor.getAttribute("href") === "/inbox")).toBe(false);
+
+    const tasksLink = [...container.querySelectorAll("a")].find((anchor) => anchor.getAttribute("href") === "/issues");
+    expect(tasksLink).toBeTruthy();
+    expect(tasksLink?.textContent).toContain("Tasks");
+    expect(tasksLink?.textContent).toContain("7");
+
+    flushSync(() => {
+      root.unmount();
+    });
+  });
+
+  it("leads the Work group with Chat and nests the agent chats under it when agent chat is on (PAP-670)", async () => {
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableAgentChat: true });
+    const root = await renderSidebar();
+
+    const chatLink = [...container.querySelectorAll("a")].find((anchor) => anchor.getAttribute("href") === "/chats");
+    expect(chatLink?.textContent).toContain("Chat");
+
+    const chats = container.querySelector('[data-testid="sidebar-agent-chats"]');
+    expect(chats?.getAttribute("data-nested")).toBe("true");
+
+    const workSection = chatLink?.closest("div")?.parentElement?.parentElement;
+    const workText = workSection?.textContent ?? "";
+    expect(workText.indexOf("Chat")).toBeLessThan(workText.indexOf("Tasks"));
+
+    flushSync(() => {
+      root.unmount();
+    });
+  });
+
+  it("hides Chat and the agent chat rows entirely while agent chat is off", async () => {
+    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableAgentChat: false });
+    const root = await renderSidebar();
+
+    expect([...container.querySelectorAll("a")].some((anchor) => anchor.getAttribute("href") === "/chats")).toBe(false);
+    expect(container.querySelector('[data-testid="sidebar-agent-chats"]')).toBeNull();
 
     flushSync(() => {
       root.unmount();
@@ -571,18 +630,6 @@ describe("Sidebar", () => {
     const root = await renderSidebar();
 
     expect(container.textContent).not.toContain("Pipelines");
-
-    flushSync(() => {
-      root.unmount();
-    });
-  });
-
-  it("shows the Workspaces link when isolated workspaces are enabled", async () => {
-    mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableIsolatedWorkspaces: true });
-    const root = await renderSidebar();
-
-    const link = [...container.querySelectorAll("a")].find((anchor) => anchor.textContent === "Workspaces");
-    expect(link?.getAttribute("href")).toBe("/workspaces");
 
     flushSync(() => {
       root.unmount();

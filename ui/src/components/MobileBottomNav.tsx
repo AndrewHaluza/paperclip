@@ -5,13 +5,14 @@ import {
   CircleCheck,
   SquarePen,
   Users,
-  Inbox,
+  MessageSquare,
 } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useDialogActions } from "../context/DialogContext";
 import { SIDEBAR_SCROLL_RESET_STATE } from "../lib/navigation-scroll";
 import { cn } from "../lib/utils";
 import { useInboxBadge } from "../hooks/useInboxBadge";
+import { useAgentChatEnabled } from "@/hooks/useAgentChatEnabled";
 import { Badge } from "@/components/ui/badge";
 
 interface MobileBottomNavProps {
@@ -40,22 +41,29 @@ export function MobileBottomNav({ visible }: MobileBottomNavProps) {
   const { selectedCompanyId } = useCompany();
   const { openNewIssue } = useDialogActions();
   const inboxBadge = useInboxBadge(selectedCompanyId);
+  const { enabled: agentChatEnabled } = useAgentChatEnabled();
 
+  // PAP-670: Home · Chat · + · Tasks · Agents. Inbox is gone as a destination —
+  // it is a view inside Tasks now, so its unread badge rides on Tasks. Chat only
+  // appears when `enableAgentChat` is on, and the grid tracks the live count so
+  // the bar stays evenly divided either way.
   const items = useMemo<MobileNavItem[]>(
     () => [
       { type: "link", to: "/dashboard", label: "Home", icon: House },
-      { type: "link", to: "/issues", label: "Tasks", icon: CircleCheck },
+      ...(agentChatEnabled
+        ? [{ type: "link", to: "/chats", label: "Chat", icon: MessageSquare } as MobileNavItem]
+        : []),
       { type: "action", label: "New Task", icon: SquarePen, onClick: () => openNewIssue() },
-      { type: "link", to: "/agents/all", label: "Agents", icon: Users },
       {
         type: "link",
-        to: "/inbox",
-        label: "Inbox",
-        icon: Inbox,
+        to: "/issues",
+        label: "Tasks",
+        icon: CircleCheck,
         badge: inboxBadge.inbox,
       },
+      { type: "link", to: "/agents/all", label: "Agents", icon: Users },
     ],
-    [openNewIssue, inboxBadge.inbox],
+    [openNewIssue, inboxBadge.inbox, agentChatEnabled],
   );
 
   return (
@@ -66,7 +74,10 @@ export function MobileBottomNav({ visible }: MobileBottomNavProps) {
       )}
       aria-label="Mobile navigation"
     >
-      <div className="grid h-16 grid-cols-5 px-1">
+      <div
+        className="grid h-16 px-1"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
         {items.map((item) => {
           if (item.type === "action") {
             const Icon = item.icon;

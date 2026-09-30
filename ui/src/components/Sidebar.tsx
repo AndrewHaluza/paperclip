@@ -1,5 +1,4 @@
 import {
-  Inbox,
   ListChecks,
   CircleCheck,
   Target,
@@ -18,6 +17,7 @@ import {
   FolderOpen,
   Unplug,
   MessagesSquare,
+  MessageSquare,
   GanttChartSquare,
   LayoutGrid,
   Users,
@@ -89,14 +89,13 @@ export function Sidebar({ children }: { children?: ReactNode }) {
   const liveIssueIds = new Set(
     (liveRuns ?? []).flatMap((run) => run.issueId ? [run.issueId] : []),
   );
-  const showWorkspacesLink = experimentalSettings?.enableIsolatedWorkspaces === true;
   const showPipelines = experimentalSettings?.enablePipelines === true;
   const showStatusCards = experimentalSettings?.enableStatusCards === true;
   const goalsLinkPending = experimentalSettings === undefined;
   const showGoalsLink = experimentalSettings?.enableGoalsSidebarLink === true;
   // Decisions (attention home) is an experimental surface (PAP-13481): the nav
-  // item is hidden entirely until the flag is enabled (same no-flash pattern as
-  // showWorkspacesLink — it defaults hidden, so no placeholder is needed).
+  // item is hidden entirely until the flag is enabled (it defaults hidden, so
+  // no placeholder is needed).
   const showDecisions = experimentalSettings?.enableDecisions === true;
   const { data: attentionFeed } = useQuery({
     queryKey: queryKeys.attention(selectedCompanyId!),
@@ -108,7 +107,7 @@ export function Sidebar({ children }: { children?: ReactNode }) {
   const showCases = experimentalSettings?.enableCases === true;
   // Conference Room Chat flag (PAP-136/PAP-137): the Conference Room nav item
   // is a new surface, hidden entirely while the flag is off (same no-flash
-  // pattern as showWorkspacesLink above).
+  // pattern as showDecisions above).
   const conferenceRoomChatEnabled = experimentalSettings?.enableConferenceRoomChat === true;
 
   const pluginContext = {
@@ -166,15 +165,6 @@ export function Sidebar({ children }: { children?: ReactNode }) {
               Cmd/Ctrl+K remains the keyboard path (command palette). */}
           <SidebarNavItem to="/search" label="Search" icon={Search} />
           <SidebarNavItem to="/dashboard" label="Dashboard" icon={LayoutDashboard} liveCount={liveRunCount} />
-          <SidebarNavItem
-            to="/inbox"
-            label="Inbox"
-            icon={Inbox}
-            badge={inboxBadge.inbox}
-            badgeLabel="unread"
-            badgeTone={inboxBadge.failedRuns > 0 ? "danger" : "default"}
-            alert={inboxBadge.failedRuns > 0}
-          />
           {showDecisions ? (
             <SidebarNavItem
               to="/decisions"
@@ -193,7 +183,26 @@ export function Sidebar({ children }: { children?: ReactNode }) {
         </div>
 
         <SidebarSection label="Work" collapsible={{ open: workOpen, onOpenChange: setWorkOpen }}>
-          <SidebarNavItem to="/issues" label="Tasks" icon={CircleCheck} />
+          {/* Chat leads the Work group (PAP-670). The agent rows that used to
+              sit in their own "Chats" section now nest under this row, the same
+              way starred projects nest under Projects. */}
+          {agentChatEnabled ? (
+            <>
+              <SidebarNavItem to="/chats" label="Chat" icon={MessageSquare} />
+              {!children ? <SidebarAgentChats nested /> : null}
+            </>
+          ) : null}
+          {/* Inbox is no longer a nav row (PAP-670) — it is a view inside Tasks,
+              so the unread/failed-run badge rides on Tasks. */}
+          <SidebarNavItem
+            to="/issues"
+            label="Tasks"
+            icon={CircleCheck}
+            badge={inboxBadge.inbox}
+            badgeLabel="unread"
+            badgeTone={inboxBadge.failedRuns > 0 ? "danger" : "default"}
+            alert={inboxBadge.failedRuns > 0}
+          />
           {streamlinedUiEnabled ? (
             <>
               <SidebarNavItem to="/projects" label="Projects" icon={FolderOpen} />
@@ -216,9 +225,6 @@ export function Sidebar({ children }: { children?: ReactNode }) {
               className="h-8 pointer-coarse:h-7"
               aria-hidden="true"
             />
-          ) : null}
-          {showWorkspacesLink ? (
-            <SidebarNavItem to="/workspaces" label="Workspaces" icon={GitBranch} />
           ) : null}
           <PluginSlotOutlet
             slotTypes={["sidebar"]}
@@ -248,7 +254,6 @@ export function Sidebar({ children }: { children?: ReactNode }) {
         ) : null}
 
         {children}
-        {agentChatEnabled && !children && <SidebarAgentChats />}
 
         {streamlinedUiEnabled ? (
           <SidebarRecentTasks companyId={selectedCompanyId} liveIssueIds={liveIssueIds} />

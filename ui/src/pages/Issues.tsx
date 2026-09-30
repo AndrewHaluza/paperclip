@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { useLocation, useSearchParams } from "@/lib/router";
+import type { ReactNode } from "react";
+import { useLocation, useNavigate, useSearchParams } from "@/lib/router";
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { issuesApi } from "../api/issues";
 import { agentsApi } from "../api/agents";
@@ -13,9 +14,22 @@ import { queryKeys } from "../lib/queryKeys";
 import { createIssueDetailLocationState } from "../lib/issueDetailBreadcrumb";
 import { EmptyState } from "../components/EmptyState";
 import { IssuesList } from "../components/IssuesList";
-import { CircleDot } from "lucide-react";
+import { TaskViewsMenu } from "../components/TaskViewsMenu";
+import { Button } from "@/components/ui/button";
+import { CircleDot, Plus } from "lucide-react";
 import type { Issue } from "@paperclipai/shared";
 import { useStreamlinedUiEnabled } from "../hooks/useStreamlinedUiEnabled";
+import { useDialogActions } from "../context/DialogContext";
+import { useInboxBadge } from "../hooks/useInboxBadge";
+import { Inbox } from "./Inbox";
+import {
+  TASK_VIEW_PARAM,
+  loadLastTaskView,
+  normalizeTaskViewKey,
+  saveLastTaskView,
+  taskView,
+  type TaskViewKey,
+} from "../lib/task-views";
 
 const WORKSPACE_FILTER_ISSUE_LIMIT = 1000;
 const ISSUES_PAGE_SIZE = 100;
@@ -65,7 +79,106 @@ export function buildIssuesSearchUrl(currentHref: string, search: string): strin
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+/**
+ * Query params that only the organization task list understands. A deep link
+ * carrying one of these (the dashboard's "assigned to me", a workspace drill-in,
+ * a search hand-off) must not land on a My-work view, so it resolves to
+ * `All tasks` instead of the user's last-used view. PAP-670.
+ */
+const ORGANIZATION_SCOPED_PARAMS = ["assignee", "workspace", "participantAgentId", "q"] as const;
+
+export function resolveInitialTaskView(
+  requested: string | null,
+  hasOrganizationScopedParam: boolean,
+  lastUsed: TaskViewKey,
+): TaskViewKey {
+  const explicit = normalizeTaskViewKey(requested);
+  if (explicit) return explicit;
+  return hasOrganizationScopedParam ? "all" : lastUsed;
+}
+
+/**
+ * Tasks — the single task surface after PAP-670 merged Inbox into it.
+ *
+ * This component only resolves `?view=` to a view and hands off: My-work views
+ * render the inbox list, organization views render the task collection. Both
+ * get the same Views control in their toolbar, so the switch reads as one page.
+ */
 export function Issues() {
+  const { enabled: streamlinedUiEnabled } = useStreamlinedUiEnabled();
+  // The legacy shell never had the merged surface; it keeps the plain task list
+  // and its own /inbox/* pages.
+  return streamlinedUiEnabled ? <StreamlinedTasks /> : <OrganizationIssues />;
+}
+
+function StreamlinedTasks() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { selectedCompanyId } = useCompany();
+  const { openNewIssue } = useDialogActions();
+  const inboxBadge = useInboxBadge(selectedCompanyId);
+
+  const requestedView = searchParams.get(TASK_VIEW_PARAM);
+  const hasOrganizationScopedParam = ORGANIZATION_SCOPED_PARAMS.some(
+    (param) => (searchParams.get(param) ?? "").length > 0,
+  );
+  // Read the stored view once per mount so a later write can't yank the view
+  // out from under the user mid-session.
+  const [lastUsedView] = useState<TaskViewKey>(() => loadLastTaskView());
+  const view = resolveInitialTaskView(requestedView, hasOrganizationScopedParam, lastUsedView);
+  const definition = taskView(view);
+
+  // Only an explicit choice is remembered — a deep link's implied view is not
+  // the user's preference.
+  useEffect(() => {
+    if (normalizeTaskViewKey(requestedView)) saveLastTaskView(view);
+  }, [requestedView, view]);
+
+  // Make the resolved view addressable without dropping the params that
+  // brought the user here.
+  useEffect(() => {
+    if (normalizeTaskViewKey(requestedView)) return;
+    const next = new URLSearchParams(searchParams);
+    next.set(TASK_VIEW_PARAM, view);
+    setSearchParams(next, { replace: true });
+  }, [requestedView, view, searchParams, setSearchParams]);
+
+  const selectView = useCallback((next: TaskViewKey) => {
+    saveLastTaskView(next);
+    // A view switch starts clean: the previous view's search and filters are
+    // its own, not the new view's.
+    navigate(`/issues?${TASK_VIEW_PARAM}=${next}`);
+  }, [navigate]);
+
+  const viewsMenu = (
+    <TaskViewsMenu value={view} onChange={selectView} badgeCount={inboxBadge.inbox} />
+  );
+
+  if (definition.surface === "inbox") {
+    return (
+      <Inbox
+        tab={definition.inboxTab}
+        surfaceLabel="Tasks"
+        toolbarContext={(
+          <div className="flex min-w-0 items-center gap-2">
+            {viewsMenu}
+            <Button size="sm" variant="outline" aria-label="New Task" onClick={() => openNewIssue()}>
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">New Task</span>
+            </Button>
+          </div>
+        )}
+      />
+    );
+  }
+
+  return <OrganizationIssues toolbarContext={viewsMenu} initialStatuses={definition.statuses} />;
+}
+
+function OrganizationIssues({
+  toolbarContext,
+  initialStatuses,
+}: { toolbarContext?: ReactNode; initialStatuses?: string[] } = {}) {
   const { enabled: streamlinedUiEnabled } = useStreamlinedUiEnabled();
   const issuesPresentation = resolveIssuesPresentation(streamlinedUiEnabled);
   const { selectedCompanyId } = useCompany();
@@ -223,6 +336,8 @@ export function Issues() {
       issueLinkState={issueLinkState}
       initialAssignees={searchParams.get("assignee") ? [searchParams.get("assignee")!] : undefined}
       initialWorkspaces={initialWorkspaces.length > 0 ? initialWorkspaces : undefined}
+      initialStatuses={initialStatuses}
+      toolbarContext={toolbarContext}
       initialSearch={syncedSearch}
       onSearchChange={handleSearchChange}
       enableRoutineVisibilityFilter

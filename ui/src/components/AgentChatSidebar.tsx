@@ -13,6 +13,7 @@ export function AgentChatSidebar({
   onToggleStar,
   onOpenChat,
   agents,
+  nested = false,
   href = (id: string) =>
     `/chats/${encodeURIComponent(agentRouteRef(agents.find((agent) => agent.id === id)!))}`,
 }: {
@@ -23,6 +24,8 @@ export function AgentChatSidebar({
   recentIds: string[];
   onToggleStar: (id: string) => void;
   onOpenChat: () => void;
+  /** Render as indented children of the `Chat` nav row instead of a labelled section. */
+  nested?: boolean;
 }) {
   const { collapsed, peeking } = useSidebar();
   const rail = collapsed && !peeking;
@@ -38,7 +41,7 @@ export function AgentChatSidebar({
           iconNode={
             <AgentIcon icon={agent.icon} className="h-4 w-4 shrink-0" />
           }
-          className={rail ? undefined : "pr-9"}
+          className={cn(rail ? undefined : "pr-9", nested && !rail && "pl-6")}
         />
         {!rail && (
           <Button
@@ -63,6 +66,14 @@ export function AgentChatSidebar({
       </div>
     );
   };
+  if (nested) {
+    if (ordered.length === 0) return null;
+    return (
+      <div className="flex flex-col gap-0.5" aria-label="Chats">
+        {ordered.map(row)}
+      </div>
+    );
+  }
   return (
     <section aria-label="Chats" className="group/chats flex flex-col gap-0.5">
       <div className="relative flex min-h-9 items-center px-4 py-1.5">
