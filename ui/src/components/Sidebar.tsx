@@ -29,7 +29,6 @@ import { SidebarNavItem } from "./SidebarNavItem";
 import { SidebarAgents } from "./SidebarAgents";
 import { SidebarProjects } from "./SidebarProjects";
 import { SidebarStarredProjects } from "./SidebarStarredProjects";
-import { SidebarAgentChats } from "./SidebarAgentChats";
 import { useAgentChatEnabled } from "@/hooks/useAgentChatEnabled";
 import { SidebarRecentTasks } from "./SidebarRecentTasks";
 import { useDialogActions } from "../context/DialogContext";
@@ -183,14 +182,11 @@ export function Sidebar({ children }: { children?: ReactNode }) {
         </div>
 
         <SidebarSection label="Work" collapsible={{ open: workOpen, onOpenChange: setWorkOpen }}>
-          {/* Chat leads the Work group (PAP-670). The agent rows that used to
-              sit in their own "Chats" section now nest under this row, the same
-              way starred projects nest under Projects. */}
+          {/* Chat leads the Work group (PAP-670). It is a single row: the
+              agents you talk to live in the Chat surface's own secondary rail
+              (ChatContextualSidebar), not in the primary nav. */}
           {agentChatEnabled ? (
-            <>
-              <SidebarNavItem to="/chats" label="Chat" icon={MessageSquare} />
-              {!children ? <SidebarAgentChats nested /> : null}
-            </>
+            <SidebarNavItem to="/chats" label="Chat" icon={MessageSquare} />
           ) : null}
           {/* Inbox is no longer a nav row (PAP-670) — it is a view inside Tasks,
               so the unread/failed-run badge rides on Tasks. */}

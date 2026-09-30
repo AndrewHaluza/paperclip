@@ -4,6 +4,7 @@ export type ContextualSidebarSurface =
   | "agent"
   | "routine"
   | "skills"
+  | "chat"
   | `plugin:${string}`;
 
 export interface ShellRouteClassification {
@@ -38,6 +39,7 @@ export function classifyShellRoute(
     && !["all", "active", "paused", "error", "builtin"].includes(agentSegment ?? "");
   const isRoutineDetail = root === "routines" && companySegments.length >= 2;
   const isSkillsSurface = root === "skills";
+  const isChatSurface = root === "chats";
 
   return {
     companySegments,
@@ -52,6 +54,8 @@ export function classifyShellRoute(
             ? "routine"
             : isSkillsSurface
               ? "skills"
+              : isChatSurface
+                ? "chat"
         : null,
   };
 }

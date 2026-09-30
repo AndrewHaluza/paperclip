@@ -95,6 +95,15 @@ vi.mock("./SkillsContextualSidebar", () => ({
   SkillsContextualSidebar: () => <div>Skills sidebar</div>,
 }));
 
+vi.mock("./ChatContextualSidebar", () => ({
+  ChatContextualSidebar: () => <div>Chat sidebar</div>,
+}));
+
+const mockAgentChat = vi.hoisted(() => ({ enabled: true }));
+vi.mock("@/hooks/useAgentChatEnabled", () => ({
+  useAgentChatEnabled: () => ({ enabled: mockAgentChat.enabled, loaded: true }),
+}));
+
 vi.mock("./AppConnectionSidebar", () => ({
   AppDetailSidebar: (
     props:
@@ -1046,6 +1055,67 @@ describe("Layout", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("keeps global navigation beside the Chat rail on desktop chat routes (PAP-670)", async () => {
+    for (const pathname of ["/PAP/chats", "/PAP/chats/ceo"]) {
+      currentPathname = pathname;
+      const root = createRoot(container);
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      await act(async () => {
+        root.render(
+          <QueryClientProvider client={queryClient}>
+            <Layout />
+          </QueryClientProvider>,
+        );
+      });
+      await flushReact();
+      await flushReact();
+
+      expect(container.textContent).toContain("Chat sidebar");
+      expect(container.textContent).toContain("Main company nav");
+      const secondaryRail = container.querySelector("[data-secondary-sidebar]");
+      expect(secondaryRail?.classList.contains("w-60")).toBe(true);
+
+      await act(async () => {
+        root.unmount();
+      });
+      container.innerHTML = "";
+    }
+  });
+
+  it("omits the Chat rail when agent chat is off and on mobile (PAP-670)", async () => {
+    for (const [enabled, isMobile] of [[false, false], [true, true]] as const) {
+      mockAgentChat.enabled = enabled;
+      mockSidebarState.isMobile = isMobile;
+      currentPathname = "/PAP/chats/ceo";
+      const root = createRoot(container);
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      await act(async () => {
+        root.render(
+          <QueryClientProvider client={queryClient}>
+            <Layout />
+          </QueryClientProvider>,
+        );
+      });
+      await flushReact();
+      await flushReact();
+
+      expect(container.textContent).not.toContain("Chat sidebar");
+
+      await act(async () => {
+        root.unmount();
+      });
+      container.innerHTML = "";
+    }
+    mockAgentChat.enabled = true;
+    mockSidebarState.isMobile = false;
   });
 
   it("keeps Agent and Routine collection routes in global navigation", async () => {

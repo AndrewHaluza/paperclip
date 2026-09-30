@@ -116,10 +116,10 @@ vi.mock("./SidebarStarredProjects", () => ({
   SidebarStarredProjects: () => <div data-testid="sidebar-starred-projects" />,
 }));
 
+// Stubbed so the "no agent names in the primary nav" assertion would catch a
+// regression that mounts the old per-agent chat rows again.
 vi.mock("./SidebarAgentChats", () => ({
-  SidebarAgentChats: ({ nested }: { nested?: boolean }) => (
-    <div data-testid="sidebar-agent-chats" data-nested={String(nested === true)}>Agent chats</div>
-  ),
+  SidebarAgentChats: () => <div data-testid="sidebar-agent-chats">Agent chats</div>,
 }));
 
 vi.mock("./SidebarRecentTasks", () => ({
@@ -384,15 +384,15 @@ describe("Sidebar", () => {
     });
   });
 
-  it("leads the Work group with Chat and nests the agent chats under it when agent chat is on (PAP-670)", async () => {
+  it("leads the Work group with a single Chat row and keeps agent names out of the primary nav (PAP-670)", async () => {
     mockInstanceSettingsApi.getExperimental.mockResolvedValue({ enableAgentChat: true });
     const root = await renderSidebar();
 
     const chatLink = [...container.querySelectorAll("a")].find((anchor) => anchor.getAttribute("href") === "/chats");
     expect(chatLink?.textContent).toContain("Chat");
 
-    const chats = container.querySelector('[data-testid="sidebar-agent-chats"]');
-    expect(chats?.getAttribute("data-nested")).toBe("true");
+    // Agents live in the Chat surface's secondary rail, never in the primary nav.
+    expect(container.querySelector('[data-testid="sidebar-agent-chats"]')).toBeNull();
 
     const workSection = chatLink?.closest("div")?.parentElement?.parentElement;
     const workText = workSection?.textContent ?? "";

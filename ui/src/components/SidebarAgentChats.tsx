@@ -15,12 +15,7 @@ import { AgentChatSidebar } from "./AgentChatSidebar";
 import { AgentChatPicker } from "./AgentChatPicker";
 import { useSidebar } from "@/context/SidebarContext";
 
-/**
- * `nested` renders the agent rows as indented children of the `Chat` nav row
- * (PAP-670) instead of as their own labelled "Chats" section: no group header,
- * no inline new-chat button — starting a chat is the `/chats` landing's job.
- */
-export function SidebarAgentChats({ nested = false }: { nested?: boolean } = {}) {
+export function SidebarAgentChats() {
   const { selectedCompanyId } = useCompany();
   const { data: session } = useQuery({
     queryKey: queryKeys.auth.session,
@@ -32,13 +27,12 @@ export function SidebarAgentChats({ nested = false }: { nested?: boolean } = {})
       key={`${selectedCompanyId}:${userId ?? "local-board"}`}
       companyId={selectedCompanyId}
       userId={userId}
-      nested={nested}
     />
   );
 }
 
 // A scope change unmounts the picker, including its open state and search.
-function CompanyAgentChats({ companyId, userId, nested }: { companyId: string | null; userId?: string; nested?: boolean }) {
+function CompanyAgentChats({ companyId, userId }: { companyId: string | null; userId?: string }) {
   const agentsQuery = useQuery({
     queryKey: queryKeys.agents.list(companyId!),
     queryFn: () => agentsApi.list(companyId!),
@@ -59,7 +53,6 @@ function CompanyAgentChats({ companyId, userId, nested }: { companyId: string | 
     <>
       <AgentChatSidebar
         agents={agents}
-        nested={nested}
         onOpenChat={() => setPickerOpen(true)}
         activeId={active?.id ?? ""}
         starredIds={stars}

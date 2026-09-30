@@ -18,19 +18,81 @@ import {
   useResourceMemberships,
 } from "@/hooks/useResourceMemberships";
 import { queryKeys } from "@/lib/queryKeys";
-import { useNavigate } from "@/lib/router";
+import { Navigate, useNavigate } from "@/lib/router";
 import { useRecentAgentChats } from "@/lib/recent-agent-chats";
 import { agentRouteRef, cn } from "@/lib/utils";
 import { StarToggle } from "@/components/StarToggle";
+import { chatHref } from "@/components/ChatContextualSidebar";
+import { useSidebar } from "@/context/SidebarContext";
+import { useAgentConversations } from "@/hooks/useAgentConversations";
 
 /**
  * Landing surface for the `Chat` nav row added in PAP-670. `/chats/:agentRef`
  * already existed; `/chats` did not, so the nav item had nowhere to land.
  *
- * No new data model: starred agents come from the existing resource-membership
- * store and recents from the same localStorage list the sidebar reads.
+ * Desktop pairs this route with the Chat secondary rail (the list of agents
+ * you talk to), so the landing opens your most recent conversation beside it.
+ * Mobile has no rail, so the landing is the agent list itself.
  */
 export function AgentChatIndex() {
+  const { isMobile } = useSidebar();
+  return isMobile ? <AgentChatList /> : <AgentChatDesktopLanding />;
+}
+
+function AgentChatDesktopLanding() {
+  const { selectedCompanyId } = useCompany();
+  const { setBreadcrumbs } = useBreadcrumbs();
+  const { enabled, loaded } = useAgentChatEnabled();
+  const { agents, agentsQuery, conversations, recentIds, loading } = useAgentConversations(selectedCompanyId, enabled);
+  // Return to the chat you last had open in this browser without waiting for
+  // every agent's lookup; fall back to the most recent conversation.
+  const lastVisited = agents.find((agent) => agent.id === recentIds[0]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setBreadcrumbs([{ label: "Chat" }]);
+  }, [setBreadcrumbs]);
+
+  if (enabled && lastVisited) return <Navigate to={chatHref(lastVisited)} replace />;
+  if (!loaded || (enabled && loading)) {
+    return <p className="text-sm text-muted-foreground">Loading chats…</p>;
+  }
+  if (!enabled) {
+    return (
+      <EmptyState
+        icon={MessageSquare}
+        title="Agent Chat is disabled"
+        message="Enable Agent Chat in Experimental settings to start conversations with your agents."
+        description="Existing history stays reachable through task links."
+      />
+    );
+  }
+  const latest = conversations[0];
+  if (latest) return <Navigate to={chatHref(latest.agent)} replace />;
+  return (
+    <>
+      <EmptyState
+        icon={MessageSquare}
+        message="No conversations yet."
+        description="Pick an agent to start chatting."
+        action="New chat"
+        onAction={() => setPickerOpen(true)}
+      />
+      <AgentChatPicker
+        agents={agents}
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        loading={agentsQuery.isPending}
+        error={agentsQuery.error as Error | null}
+        onRetry={() => { void agentsQuery.refetch(); }}
+        onSelect={(agent) => navigate(chatHref(agent))}
+      />
+    </>
+  );
+}
+
+function AgentChatList() {
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const { enabled, loaded } = useAgentChatEnabled();

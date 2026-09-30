@@ -12,6 +12,8 @@ import { AppDetailSidebar } from "./AppConnectionSidebar";
 import { AgentContextualSidebar } from "./AgentContextualSidebar";
 import { RoutineContextualSidebar } from "./RoutineContextualSidebar";
 import { SkillsContextualSidebar } from "./SkillsContextualSidebar";
+import { ChatContextualSidebar } from "./ChatContextualSidebar";
+import { useAgentChatEnabled } from "@/hooks/useAgentChatEnabled";
 import { BreadcrumbBar } from "./BreadcrumbBar";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { CommandPalette } from "./CommandPalette";
@@ -91,6 +93,7 @@ export function Layout({ sidebarSections }: { sidebarSections?: ReactNode }) {
     setForceCollapsed,
   } = useSidebar();
   const { openNewIssue, openOnboarding } = useDialogActions();
+  const { enabled: agentChatEnabled } = useAgentChatEnabled();
   const { togglePanelVisible } = usePanel();
   // Optional: Layout also renders in harnesses without a ToastProvider.
   const pushToast = useOptionalToastActions()?.pushToast ?? null;
@@ -211,10 +214,15 @@ export function Layout({ sidebarSections }: { sidebarSections?: ReactNode }) {
     <SetupWizardSidebarOutlet><RoutineContextualSidebar routineId={routineId} /></SetupWizardSidebarOutlet>
   ) : streamlinedUiEnabled && shellRoute.builtInContextualSurface === "skills" ? (
     <SkillsContextualSidebar />
+  ) : streamlinedUiEnabled && shellRoute.builtInContextualSurface === "chat" && agentChatEnabled && !isMobile ? (
+    // Desktop only: on mobile the drawer keeps the primary nav and /chats is
+    // itself the conversation list, so a second list would be redundant.
+    <ChatContextualSidebar />
   ) : sharedSecondarySidebar;
   const hasSecondarySidebar = secondarySidebar != null;
   const keepsPrimarySidebar = streamlinedUiEnabled && hasSecondarySidebar && (
     shellRoute.builtInContextualSurface === "skills"
+    || shellRoute.builtInContextualSurface === "chat"
     || shellRoute.builtInContextualSurface === "agent"
     || shellRoute.builtInContextualSurface === "routine"
     || isAppsRoute

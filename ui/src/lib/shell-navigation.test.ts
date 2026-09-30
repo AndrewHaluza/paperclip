@@ -26,6 +26,8 @@ describe("shell navigation", () => {
     expect(classifyShellRoute("/PAP/routines/routine-1/overview", "PAP").builtInContextualSurface).toBe("routine");
     expect(classifyShellRoute("/PAP/skills", "PAP").builtInContextualSurface).toBe("skills");
     expect(classifyShellRoute("/PAP/skills/studio/skill-1", "PAP").builtInContextualSurface).toBe("skills");
+    expect(classifyShellRoute("/PAP/chats", "PAP").builtInContextualSurface).toBe("chat");
+    expect(classifyShellRoute("/PAP/chats/ceo", "PAP").builtInContextualSurface).toBe("chat");
   });
 
   it("keeps Agent and Routine collection routes in the global shell", () => {
