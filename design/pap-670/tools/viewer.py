@@ -10,11 +10,11 @@ js  = prev[prev.index("<script>"):]
 SCREENS = [
  dict(id="s1", n=1, slug="left-nav", lede="Step 1 · The nav itself",
    title="The left nav, after",
-   desc="Eleven static rows instead of thirteen, and the one thing that had no entry point — chat — gets the first slot under Work. Search, Inbox and Workspaces keep their pages and their URLs; they just stop spending a permanent row. Dashboard stays exactly where it is.",
+   desc="Twelve static rows instead of thirteen. Only two things leave: Inbox becomes a view inside Tasks, and Workspaces comes out of the chrome entirely. The row they free up goes to Chat — the one surface people reach for constantly with no entry point at all today. New Task, Search and Dashboard all keep their rows, in that order.",
    notes=[
-    "Organisation switcher — unchanged as a switcher. It picks up one new item: Workspaces (screen 6).",
-    "The New Task row keeps its full width; a search icon button sits at its right edge. ⌘K still opens the command palette, and /search is unchanged. In the collapsed rail this becomes its own icon row directly under New Task.",
-    "Dashboard — stays as its own row, directly below New Task, keeping its live-run count. This is the one thing that changed between revision 1 and revision 2 of this plan.",
+    "Organisation switcher — completely unchanged. Nothing moves into it. Revisions 1 and 2 both tried to park something here; revision 3 does not.",
+    "Search — keeps its own row, second in the top group. Revisions 1 and 2 turned it into an icon button in the New Task row; the board put it back, so search is untouched by this plan.",
+    "Dashboard — keeps its own row, third in the top group, with its live-run count.",
     "Chat — new, first item under Work. Opens a /chats landing (screen 5). Hidden entirely while enableAgentChat is off, the same no-flash pattern the other flagged rows already use.",
     "Tasks — now the only task surface. It carries the badge that used to sit on Inbox: unread count, danger tone when a heartbeat run has failed.",
     "Projects and its starred children — unchanged.",
@@ -23,8 +23,8 @@ SCREENS = [
     "Account bar — unchanged.",
     "The Views control in the content area is the single entry point to every list the old nav split across two separate rows.",
    ],
-   mobile="On mobile the same rows render inside the drawer. Behind the scrim, the bottom tab bar swaps Inbox for Chat — Home · Tasks · + · Chat · Agents. Home keeps pointing at /dashboard; the board asked for it to stay.",
-   why="The nav was carrying two rows that are a once-a-day destination at most (Search, Workspaces) and one that duplicates a list you already have (Inbox). Chat is the opposite: a thing you reach for constantly with no entry point at all. Dashboard did not fit that pattern, so it keeps its row.",
+   mobile="On mobile the same rows render inside the drawer. Behind the scrim, the bottom tab bar is now Home · Chat · + · Tasks · Agents — Inbox is gone and Chat takes the second slot, the order the board asked for. Home keeps pointing at /dashboard.",
+   why="Only two rows were actually earning their removal: Inbox duplicates a list you already have, and Workspaces is a flag-gated page almost nobody opens. Chat is the opposite — constant use, no entry point. Search and Dashboard did not fit that pattern, so the board kept them, and this revision stops trying to relocate them.",
  ),
  dict(id="s2", n=2, slug="tasks-mine", lede="Step 2 · The merge",
    title="Tasks, opening on your last-used view",
@@ -76,17 +76,6 @@ SCREENS = [
    mobile="The conversation list is a full screen; selecting a conversation pushes to the chat, with a back affordance in the app bar.",
    why="“Make space for chat” only pays off if the space leads somewhere. A nav row pointing at a route that does not exist would be worse than no row.",
  ),
- dict(id="s6", n=6, slug="org-menu", lede="Step 6 · Where Workspaces lands",
-   title="The organisation menu takes Workspaces",
-   desc="Workspaces is an “about this organisation” page rather than an “about my work” page, and the organisation switcher is already the organisation-scoped menu. It is the only thing moving here — Dashboard keeps its nav row.",
-   notes=[
-    "The existing organisation list, reorder and switch behaviour — unchanged.",
-    "One new item: Workspaces, still flag-gated on enableIsolatedWorkspaces and still reachable at /projects/:id/workspaces. This is the only addition to this menu.",
-    "Create organisation, Invite people, Settings and Sign out — unchanged.",
-   ],
-   mobile="The dropdown becomes a bottom sheet; the same item sits between the organisation list and the actions.",
-   why="Workspaces is flag-gated, rarely visited, and organisation-scoped — three reasons it does not earn a permanent row, and one menu that already matches its scope.",
- ),
 ]
 
 def sec(s):
@@ -125,17 +114,16 @@ toc = "\n".join(f'        <a href="#{s["id"]}"><span class="num">{s["n"]}</span>
 SETTLED = '''
       <section id="settled">
         <div class="lede">Settled</div>
-        <h2>What changed in revision 2</h2>
-        <p class="desc">Revision 1 moved Dashboard into the organisation menu. The board rejected that and answered the four open questions. Everything below is now decided, not proposed.</p>
+        <h2>What changed in revision 3</h2>
+        <p class="desc">Revision 2 moved search into an icon and re-homed Workspaces in the organisation menu. The board rejected both. Revision 3 stops relocating things that were not asked to move.</p>
         <div class="notes">
           <ul>
-            <li><strong>Dashboard stays in the nav</strong>, as its own row directly below New Task, keeping its live-run count. Revision 1 had it moving into the organisation menu; it no longer does. The organisation menu now gains only Workspaces.</li>
-            <li><strong>The truncated ticket bullet is dropped.</strong> “avatar/icon and get rid of it as a” is set aside at the board's instruction. The separate “find another place for search” bullet still stands, so search still leaves the nav and becomes the icon button in the New Task row.</li>
-            <li><strong>Tasks opens your last-used view</strong>, defaulting to Mine on a fresh profile.</li>
-            <li><strong>Audit stays in the nav.</strong></li>
-            <li><strong>The mobile Home tab stays</strong>, pointing at /dashboard. Only the Inbox tab is replaced, by Chat.</li>
+            <li><strong>Search keeps its own row.</strong> Revisions 1 and 2 turned it into an icon button in the New Task row; the top group is now New Task · Search · Dashboard, exactly as it is today. Search is untouched by this plan.</li>
+            <li><strong>Workspaces is removed outright</strong> — from the left nav <em>and</em> the organisation dropdown, with no new home. The organisation menu therefore gains nothing at all, so the screen that showed it has been deleted rather than redrawn.</li>
+            <li><strong>The mobile tab bar order is Home · Chat · + · Tasks · Agents.</strong> Chat takes the second slot; Inbox is gone.</li>
+            <li>Carried over from revision 2 and unchanged: Dashboard keeps its row · Tasks opens your last-used view, defaulting to Mine · Audit stays in the nav · the mobile Home tab stays.</li>
           </ul>
-          <div class="why"><strong>One risk still worth naming.</strong> Screen 4 is the only part of this that is not routing and CSS. If the mixed-row renderer turns out to be expensive, the fallback is to leave <code>/inbox/all</code> as its own page reached from the Views menu — every nav row still disappears, and the other nine views still merge.</div>
+          <div class="why"><strong>Two things to know.</strong> First, with Workspaces out of both menus, <code>/workspaces</code> is no longer reachable from any chrome — the route still resolves, and the page is still reachable at <code>/projects/:id/workspaces</code>, but nothing links to the standalone list. That is what &ldquo;remove it altogether&rdquo; means, and it is worth saying out loud. Second, screen 4 is still the only part of this that is not routing and CSS; if the mixed-row renderer turns out to be expensive, the fallback is to leave <code>/inbox/all</code> as its own page reached from the Views menu.</div>
         </div>
       </section>
 '''
@@ -153,7 +141,7 @@ page = f'''<!doctype html>
     <details class="toc">
       <summary class="toc-summary">
         <span>
-          <span class="crumb">PAP-670 · Left nav · rev 2</span><br>
+          <span class="crumb">PAP-670 · Left nav · rev 3</span><br>
           <span class="title">Jump to a screen</span>
         </span>
         <span class="chevron" aria-hidden="true"></span>
@@ -169,18 +157,18 @@ page = f'''<!doctype html>
 {toc}
 
         <h2>Decisions</h2>
-        <a href="#settled"><span class="num">✓</span>What changed in rev 2</a>
+        <a href="#settled"><span class="num">✓</span>What changed in rev 3</a>
       </nav>
     </details>
 
     <main>
       <header class="hero">
-        <div class="crumb">PAP-670 · Wireframes · revision 2</div>
+        <div class="crumb">PAP-670 · Wireframes · revision 3</div>
         <h1>Clean up the left nav, make space for chat</h1>
-        <p>Thirteen static nav rows become eleven. Search, Inbox and Workspaces each move somewhere that already suits them, and the row they free up goes to Chat — the one surface people reach for constantly that has no entry point at all today. Dashboard keeps its own row, directly below New Task. Nothing is deleted and no URL breaks.</p>
+        <p>Thirteen static nav rows become twelve. Inbox becomes a view inside Tasks, Workspaces comes out of the chrome entirely, and the row they free up goes to Chat — the one surface people reach for constantly that has no entry point at all today. New Task, Search and Dashboard all keep their rows, in that order. No route is deleted and no URL breaks.</p>
         <div class="pills">
-          <span class="pill">Revision 2</span>
-          <span class="pill">6 screens · 13 wireframes</span>
+          <span class="pill">Revision 3</span>
+          <span class="pill">5 screens · 11 wireframes</span>
           <span class="pill">Desktop + mobile</span>
           <span class="pill">Lo-fi · monochrome</span>
           <span class="pill">Click any wireframe to zoom</span>
@@ -190,7 +178,7 @@ page = f'''<!doctype html>
       <section id="flow" class="flow-section">
         <div class="lede">Flow</div>
         <h2>Where every left-nav item goes</h2>
-        <p class="desc">Before on the left, after on the right, destinations in the middle. The grey dotted path is Dashboard staying put. Red dashed marks are annotation, not UI.</p>
+        <p class="desc">Before on the left, after on the right, destinations in the middle. The grey dotted path is Search and Dashboard staying put. The red ✘ is Workspaces having no destination, on purpose. Red dashed marks are annotation, not UI.</p>
         <div class="wire" data-zoom data-caption="Flow — where every left-nav item goes">
           <div class="label"><span>flow.svg</span><span>1280×880</span></div>
           <img src="wireframes/flow.svg" alt="Before and after left nav with destinations for each removed item" />
@@ -199,7 +187,7 @@ page = f'''<!doctype html>
 {''.join(sec(s) for s in SCREENS)}
 {SETTLED}
       <div class="footer">
-        PAP-670 · revision 2 · regenerate with <code>design/pap-670/tools/</code> · lo-fi, monochrome, 8px grid · SVG sources in <code>wireframes/</code>
+        PAP-670 · revision 3 · regenerate with <code>design/pap-670/tools/</code> · lo-fi, monochrome, 8px grid · SVG sources in <code>wireframes/</code>
       </div>
     </main>
   </div>

@@ -13,10 +13,11 @@ def appbar(title, y=0, menu=True):
     return s
 
 def tabbar(active="Tasks"):
-    """Home stays (board decision); only Inbox is replaced, by Chat."""
+    """Rev 3 order, set by the board: Home · Chat · + · Tasks · Agents.
+    Home stays; Inbox is gone and Chat takes the second slot."""
     s  = rect(0, 744, MW_, 68, fill="#fff")
     s += line(0, 744, MW_, 744, INK, 1.5)
-    for i, t in enumerate(["Home", "Tasks", "New", "Chat", "Agents"]):
+    for i, t in enumerate(["Home", "Chat", "New", "Tasks", "Agents"]):
         cx = 37 + i * 75
         if t == "New":
             s += circ(cx, 776, 16, fill=PH); s += txt(cx, 782, "+", 20, "middle"); continue
@@ -45,16 +46,14 @@ def m_task_row(y, title, meta, unread=False, kind="task"):
 DW_ = 288
 b  = rect(0, 0, MW_, MH_, fill=PH)
 b += draw_nav(NEW_NAV, x0=0, w=DW_, h=MH_, account=True)
-b += region(0, 8, DW_, 48)
-b += region(8, 96, DW_ - 16, 32)
-b += region(8, 160, DW_ - 16, 32)
+b += region(8, 192, DW_ - 16, 32)
 b += region(DW_ + 8, 744, MW_ - DW_ - 16, 60)
-for cy, n in [(28, "1"), (80, "2"), (112, "3"), (176, "4"), (208, "5"),
-              (240, "6"), (432, "7"), (592, "8"), (760, "9")]:
+for cy, n in [(28, "1"), (112, "2"), (144, "3"), (208, "4"), (240, "5"),
+              (272, "6"), (464, "7"), (624, "8"), (760, "9")]:
     b += callout(DW_ + 40, cy, n)
 b += txt(DW_ + 8, 700, "tab bar", 12, "start", ACC)
 b += txt(DW_ + 8, 716, "behind", 12, "start", ACC)
-write("left-nav-mobile.svg", MW_, MH_, b, "PAP-670 rev2 new left nav as the mobile drawer")
+write("left-nav-mobile.svg", MW_, MH_, b, "PAP-670 rev3 new left nav as the mobile drawer")
 
 # ------------------------------------------------------- 2. tasks-mine-mobile
 b  = appbar("Tasks")
@@ -81,7 +80,7 @@ b += region(M0, 152, M1 - M0, 72)
 b += callout(M0 + 84, 56, "1")
 b += callout(M1 - 8, 136, "2")
 b += callout(224, 728, "3")
-write("tasks-mine-mobile.svg", MW_, MH_, b, "PAP-670 rev2 combined Tasks on mobile")
+write("tasks-mine-mobile.svg", MW_, MH_, b, "PAP-670 rev3 combined Tasks on mobile")
 
 # ------------------------------------------------------- 3. tasks-views-mobile
 b  = appbar("Tasks")
@@ -116,7 +115,7 @@ b += region(M0 - 8, 384, M1 - M0 - 16, 160)
 b += callout(M1 - 8, 312, "1")
 b += callout(M1 - 8, 464, "2")
 b += callout(M1 - 8, 640, "3")
-write("tasks-views-mobile.svg", MW_, MH_, b, "PAP-670 rev2 views picker as a bottom sheet")
+write("tasks-views-mobile.svg", MW_, MH_, b, "PAP-670 rev3 views picker as a bottom sheet")
 
 # ------------------------------------------------------- 4. tasks-everything-mobile
 b  = appbar("Tasks")
@@ -146,7 +145,7 @@ b += tabbar("Tasks")
 b += region(M0, 192, M1 - M0, 352)
 b += callout(M1 - 8, 112, "1")
 b += callout(M1 - 8, 180, "2")
-write("tasks-everything-mobile.svg", MW_, MH_, b, "PAP-670 rev2 Everything view on mobile")
+write("tasks-everything-mobile.svg", MW_, MH_, b, "PAP-670 rev3 Everything view on mobile")
 
 # ------------------------------------------------------- 5. chat-mobile
 b  = appbar("Chat")
@@ -179,36 +178,7 @@ b += tabbar("Chat")
 b += callout(M1 - 8, 128, "1")
 b += callout(M1 - 8, 312, "2")
 b += callout(262, 728, "3")
-write("chat-mobile.svg", MW_, MH_, b, "PAP-670 rev2 Chat landing on mobile")
+write("chat-mobile.svg", MW_, MH_, b, "PAP-670 rev3 Chat landing on mobile")
 
-# ------------------------------------------------------- 6. org-menu-mobile
-b  = appbar("Tasks")
-for i in range(3):
-    b += m_task_row(152 + i * 72, "PAP-6xx task title", "assigned to me")
-b += rect(0, 0, MW_, MH_, fill=PH, stroke="none")
-b += rect(0, 288, MW_, MH_ - 288, rx=16, fill="#fff")
-b += rect(163, 304, 48, 4, rx=2, fill=PH)
-b += txt(M0, 348, "ORGANISATIONS", 12, fill=MUT, weight="600", mono=True)
-y = 368
-for n, sel in [("Paperclip", True), ("Acme Robotics", False), ("Side project", False)]:
-    if sel: b += rect(M0 - 8, y, M1 - M0 + 16, 40, rx=6, fill=PH)
-    b += rect(M0 + 4, y + 10, 20, 20, rx=4, fill=PH)
-    b += txt(M0 + 36, y + 25, n, 14, weight="600" if sel else None)
-    if sel: b += txt(M1 - 16, y + 25, "✓", 14, "end")
-    y += 40
-y += 8
-b += line(M0, y, M1, y, MUT, 1); y += 16
-ws_y = y
-b += glyph(M0 + 4, y + 10)
-b += txt(M0 + 36, y + 22, "Workspaces", 14)
-b += txt(M0 + 36, y + 38, "isolated execution workspaces", 12, fill=MUT)
-y += 48
-b += region(M0 - 8, ws_y - 4, M1 - M0 + 16, 52)
-b += line(M0, y, M1, y, MUT, 1); y += 16
-for n in ["Create organisation", "Invite people to Paperclip", "Settings", "Sign out"]:
-    b += glyph(M0 + 4, y + 8)
-    b += txt(M0 + 36, y + 21, n, 14)
-    y += 36
-b += callout(M1 - 8, 344, "1")
-b += callout(M1 - 8, ws_y + 22, "2")
-write("org-menu-mobile.svg", MW_, MH_, b, "PAP-670 rev2 organisation sheet carries Workspaces only")
+# Screen 6 removed in revision 3: Workspaces is gone from the organisation menu,
+# so that menu is unchanged and has nothing to wireframe.

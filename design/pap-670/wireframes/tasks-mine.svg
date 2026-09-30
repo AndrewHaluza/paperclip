@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800"
      font-family="-apple-system, system-ui, sans-serif" fill="#fff" stroke="#000" stroke-width="1.5">
-  <!-- PAP-670 rev2 combined Tasks, default view = last used (desktop) -->
+  <!-- PAP-670 rev3 combined Tasks, default view = last used (desktop) -->
   <rect x="0" y="0" width="1280" height="800" />
   <rect x="0" y="0" width="240" height="800" rx="0" fill="#fff" stroke="#000" stroke-width="1.5" />
   <rect x="24" y="18" width="20" height="20" rx="4" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
@@ -8,46 +8,46 @@
   <path d="M200,25 l4,4 l4,-4" fill="none" stroke="#666" stroke-width="1.5" />
   <rect x="24" y="72" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
   <text x="52" y="85" font-size="14" text-anchor="start" stroke="none" fill="#000">New Task</text>
-  <rect x="188" y="66" width="28" height="28" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <rect x="194" y="72" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
   <rect x="24" y="104" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="117" font-size="14" text-anchor="start" stroke="none" fill="#000">Dashboard</text>
-  <rect x="190" y="105" width="26" height="14" rx="7" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
-  <text x="203" y="116" font-size="12" text-anchor="middle" stroke="none" fill="#000">2</text>
-  <text x="24" y="152" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">WORK</text>
-  <rect x="24" y="168" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="181" font-size="14" text-anchor="start" stroke="none" fill="#000">Chat</text>
-  <rect x="8" y="192" width="224" height="32" rx="6" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="117" font-size="14" text-anchor="start" stroke="none" fill="#000">Search</text>
+  <rect x="24" y="136" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="149" font-size="14" text-anchor="start" stroke="none" fill="#000">Dashboard</text>
+  <rect x="190" y="137" width="26" height="14" rx="7" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="203" y="148" font-size="12" text-anchor="middle" stroke="none" fill="#000">2</text>
+  <text x="24" y="184" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">WORK</text>
   <rect x="24" y="200" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="213" font-size="14" text-anchor="start" stroke="none" fill="#000" font-weight="600">Tasks</text>
-  <rect x="190" y="201" width="26" height="14" rx="7" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
-  <text x="203" y="212" font-size="12" text-anchor="middle" stroke="none" fill="#000">3</text>
+  <text x="52" y="213" font-size="14" text-anchor="start" stroke="none" fill="#000">Chat</text>
+  <rect x="8" y="224" width="224" height="32" rx="6" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
   <rect x="24" y="232" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="245" font-size="14" text-anchor="start" stroke="none" fill="#000">Projects</text>
-  <circle cx="48" cy="272" r="6" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="68" y="277" font-size="14" text-anchor="start" stroke="none" fill="#666">Design System</text>
+  <text x="52" y="245" font-size="14" text-anchor="start" stroke="none" fill="#000" font-weight="600">Tasks</text>
+  <rect x="190" y="233" width="26" height="14" rx="7" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="203" y="244" font-size="12" text-anchor="middle" stroke="none" fill="#000">3</text>
+  <rect x="24" y="264" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="277" font-size="14" text-anchor="start" stroke="none" fill="#000">Projects</text>
   <circle cx="48" cy="304" r="6" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="68" y="309" font-size="14" text-anchor="start" stroke="none" fill="#666">Marketing site</text>
-  <rect x="24" y="328" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="341" font-size="14" text-anchor="start" stroke="none" fill="#000">Routines</text>
+  <text x="68" y="309" font-size="14" text-anchor="start" stroke="none" fill="#666">Design System</text>
+  <circle cx="48" cy="336" r="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="68" y="341" font-size="14" text-anchor="start" stroke="none" fill="#666">Marketing site</text>
   <rect x="24" y="360" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="373" font-size="14" text-anchor="start" stroke="none" fill="#000">Artifacts</text>
-  <text x="24" y="400" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">ORG</text>
-  <rect x="24" y="424" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="437" font-size="14" text-anchor="start" stroke="none" fill="#000">Agents</text>
+  <text x="52" y="373" font-size="14" text-anchor="start" stroke="none" fill="#000">Routines</text>
+  <rect x="24" y="392" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="405" font-size="14" text-anchor="start" stroke="none" fill="#000">Artifacts</text>
+  <text x="24" y="432" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">ORG</text>
   <rect x="24" y="456" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="469" font-size="14" text-anchor="start" stroke="none" fill="#000">Skills</text>
+  <text x="52" y="469" font-size="14" text-anchor="start" stroke="none" fill="#000">Agents</text>
   <rect x="24" y="488" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="501" font-size="14" text-anchor="start" stroke="none" fill="#000">Connectors</text>
+  <text x="52" y="501" font-size="14" text-anchor="start" stroke="none" fill="#000">Skills</text>
   <rect x="24" y="520" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="533" font-size="14" text-anchor="start" stroke="none" fill="#000">Audit</text>
-  <text x="24" y="560" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">RECENT</text>
-  <rect x="24" y="584" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="597" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-670 clean up left nav</text>
+  <text x="52" y="533" font-size="14" text-anchor="start" stroke="none" fill="#000">Connectors</text>
+  <rect x="24" y="552" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="565" font-size="14" text-anchor="start" stroke="none" fill="#000">Audit</text>
+  <text x="24" y="592" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">RECENT</text>
   <rect x="24" y="616" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="629" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-664 destructive token</text>
+  <text x="52" y="629" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-670 clean up left nav</text>
   <rect x="24" y="648" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
-  <text x="52" y="661" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-659 connectors UX</text>
+  <text x="52" y="661" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-664 destructive token</text>
+  <rect x="24" y="680" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="693" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-659 connectors UX</text>
   <rect x="0" y="744" width="240" height="56" rx="0" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
   <circle cx="32" cy="772" r="10" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
   <text x="52" y="777" font-size="14" text-anchor="start" stroke="none" fill="#000">Scott</text>

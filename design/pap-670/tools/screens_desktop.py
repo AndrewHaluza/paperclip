@@ -2,8 +2,8 @@ import os, sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from wf_lib import *
 
 # Nav-gutter callout anchors, keyed to NEW_NAV row centres (revision 2).
-NAV_CALLOUTS = [(28, "1"), (80, "2"), (112, "3"), (176, "4"), (208, "5"),
-                (240, "6"), (432, "7"), (592, "8"), (772, "9")]
+NAV_CALLOUTS = [(28, "1"), (112, "2"), (144, "3"), (208, "4"), (240, "5"),
+                (272, "6"), (464, "7"), (624, "8"), (772, "9")]
 
 # =========================================================== 1. left-nav
 b  = draw_nav(NEW_NAV, active_label="Tasks")
@@ -23,13 +23,11 @@ for i, t in enumerate(["PAP-640 in-progress icon animation",
                        "PAP-584 first-task redesign"]):
     b += task_row(400 + i * 48, t, "assigned to me · in review")
 b += line(CX, 640, CR, 640, MUT, 1)
-b += region(0, 8, 240, 48)
-b += region(8, 96, 224, 32)      # Dashboard stays put — board decision
-b += region(8, 160, 224, 32)     # Chat — the new row
+b += region(8, 192, 224, 32)     # Chat — the only new row
 for cy, n in NAV_CALLOUTS:
     b += callout(260, cy, n)
 b += callout(CX + 176, 56, "10")
-write("left-nav.svg", 1280, 800, b, "PAP-670 rev2 new left nav in context (desktop 1280x800)")
+write("left-nav.svg", 1280, 800, b, "PAP-670 rev3 new left nav in context (desktop 1280x800)")
 
 # =========================================================== 2. tasks-mine
 b  = draw_nav(NEW_NAV, active_label="Tasks")
@@ -64,7 +62,7 @@ b += callout(CX + 320, 112, "3")
 b += callout(268, 224, "4")
 b += callout(268, 424, "5")
 b += callout(CR - 128, 660, "6")
-write("tasks-mine.svg", 1280, 800, b, "PAP-670 rev2 combined Tasks, default view = last used (desktop)")
+write("tasks-mine.svg", 1280, 800, b, "PAP-670 rev3 combined Tasks, default view = last used (desktop)")
 
 # =========================================================== 3. tasks-views
 b  = draw_nav(NEW_NAV, active_label="Tasks")
@@ -117,7 +115,7 @@ b += callout(CX + 176, 56, "1")
 b += callout(MX + MW + 4, MY + 40, "2")
 b += callout(MX + MW + 4, MY + 272, "3")
 b += callout(MX + MW + 4, h + MY - 32, "4")
-write("tasks-views.svg", 1280, 800, b, "PAP-670 rev2 Tasks views menu (desktop)")
+write("tasks-views.svg", 1280, 800, b, "PAP-670 rev3 Tasks views menu (desktop)")
 
 # =========================================================== 4. tasks-everything
 b  = draw_nav(NEW_NAV, active_label="Tasks")
@@ -148,7 +146,7 @@ b += callout(CX + 176, 56, "1")
 b += callout(CX + 64, 112, "2")
 b += callout(268, 272, "3")
 b += callout(CR - 288, 188, "4")
-write("tasks-everything.svg", 1280, 800, b, "PAP-670 rev2 Everything view, mixed inbox rows (desktop)")
+write("tasks-everything.svg", 1280, 800, b, "PAP-670 rev3 Everything view, mixed inbox rows (desktop)")
 
 # =========================================================== 5. chat
 b  = draw_nav(NEW_NAV, active_label="Chat")
@@ -187,58 +185,16 @@ b += txt(PX + 16, 178, "wireframe the new left nav", 12)
 b += rect(PX + 56, 208, 400, 88, rx=8)
 b += txt(PX + 72, 232, "On it. Chat goes first under Work,", 12)
 b += txt(PX + 72, 250, "Inbox folds into Tasks as a view,", 12)
-b += txt(PX + 72, 268, "and Dashboard keeps its own row.", 12)
+b += txt(PX + 72, 268, "and Workspaces comes out entirely.", 12)
 b += rect(PX, 664, 456, 72, rx=8)
 b += txt(PX + 16, 696, "Message CEO…", 14, fill=MUT)
 b += rect(PX + 376, 696, 64, 28, rx=6, fill=PH)
 b += txt(PX + 408, 715, "Send", 12, "middle")
-b += callout(260, 176, "1")
+b += callout(260, 208, "1")
 b += callout(CX + 404, 56, "2")
 b += callout(268, 344, "3")
 b += callout(PX + 8, 56, "4")
-write("chat.svg", 1280, 800, b, "PAP-670 rev2 Chat landing (desktop)")
+write("chat.svg", 1280, 800, b, "PAP-670 rev3 Chat landing (desktop)")
 
-# =========================================================== 6. org-menu
-b  = draw_nav(NEW_NAV, active_label="Tasks")
-b += txt(CX, 48, "Tasks", 20, weight="bold")
-b += toolbar(80)
-for i in range(8):
-    b += task_row(152 + i * 48, "PAP-6xx task title", "assigned to me · in progress")
-DX, DY, DW = 16, 56, 320
-ditems = [("h", "ORGANISATIONS", None, None),
-          ("o", "Paperclip", True, None), ("o", "Acme Robotics", False, None),
-          ("o", "Side project", False, None),
-          ("s", "", None, None),
-          ("i", "Workspaces", "isolated execution workspaces", None),
-          ("s", "", None, None),
-          ("i", "Create organisation", None, None),
-          ("i", "Invite people to Paperclip", None, None),
-          ("i", "Settings", None, None),
-          ("i", "Sign out", None, None)]
-dh = 16 + sum({"h": 24, "o": 40, "s": 16}.get(it[0], 48 if it[2] else 36) for it in ditems) + 16
-b += rect(DX, DY, DW, dh, rx=10)
-y = DY + 16
-for it in ditems:
-    if it[0] == "h":
-        b += txt(DX + 16, y + 16, it[1], 12, fill=MUT, weight="600", mono=True); y += 24
-    elif it[0] == "s":
-        b += line(DX, y + 8, DX + DW, y + 8, MUT, 1); y += 16
-    elif it[0] == "o":
-        if it[2]:
-            b += rect(DX + 8, y, DW - 16, 40, rx=6, fill=PH)
-        b += rect(DX + 20, y + 10, 20, 20, rx=4, fill=PH)
-        b += txt(DX + 52, y + 25, it[1], 14, weight="600" if it[2] else None)
-        if it[2]:
-            b += txt(DX + DW - 28, y + 25, "✓", 14)
-        y += 40
-    else:
-        b += glyph(DX + 20, y + 10)
-        b += txt(DX + 52, (y + 22) if it[2] else (y + 24), it[1], 14)
-        if it[2]:
-            b += txt(DX + 52, y + 38, it[2], 12, fill=MUT)
-        y += 48 if it[2] else 36
-b += region(DX + 8, DY + 168, DW - 16, 48)
-b += callout(DX + DW + 4, DY + 32, "1")
-b += callout(DX + DW + 4, DY + 192, "2")
-b += callout(DX + DW + 4, DY + dh - 56, "3")
-write("org-menu.svg", 1280, 800, b, "PAP-670 rev2 organisation menu takes Workspaces only (desktop)")
+# Screen 6 (organisation menu) was removed in revision 3: with Workspaces gone
+# outright, that menu is completely unchanged and has nothing to show.

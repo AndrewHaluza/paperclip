@@ -103,28 +103,30 @@ def account_bar(y, x0=0, w=NAV_W, h=56):
     return s
 
 # ============================================================= nav definitions
-# Revision 2: Dashboard STAYS in the nav as its own row below New Task
-# (board decision, 2026-09-30). Only Search, Inbox and Workspaces leave.
+# Revision 3 (board, 2026-09-30): Search returns to its own row, so the top group
+# reads New Task / Search / Dashboard. Workspaces is removed outright — from the
+# nav AND the organisation menu — with no new home. Only Inbox and Workspaces leave.
 NEW_NAV = [
-    ("row",   64, "New Task", dict(trailing=True)),
-    ("row",   96, "Dashboard", dict(badge="2")),
-    ("label", 136, "WORK", {}),
-    ("row",  160, "Chat", {}),
-    ("row",  192, "Tasks", dict(active=True, badge="3")),
-    ("row",  224, "Projects", {}),
-    ("row",  256, "Design System", dict(indent=16, star=True, muted=True)),
-    ("row",  288, "Marketing site", dict(indent=16, star=True, muted=True)),
-    ("row",  320, "Routines", {}),
-    ("row",  352, "Artifacts", {}),
-    ("label", 384, "ORG", {}),
-    ("row",  416, "Agents", {}),
-    ("row",  448, "Skills", {}),
-    ("row",  480, "Connectors", {}),
-    ("row",  512, "Audit", {}),
-    ("label", 544, "RECENT", {}),
-    ("row",  576, "PAP-670 clean up left nav", dict(muted=True)),
-    ("row",  608, "PAP-664 destructive token", dict(muted=True)),
-    ("row",  640, "PAP-659 connectors UX", dict(muted=True)),
+    ("row",   64, "New Task", {}),
+    ("row",   96, "Search", {}),
+    ("row",  128, "Dashboard", dict(badge="2")),
+    ("label", 168, "WORK", {}),
+    ("row",  192, "Chat", {}),
+    ("row",  224, "Tasks", dict(active=True, badge="3")),
+    ("row",  256, "Projects", {}),
+    ("row",  288, "Design System", dict(indent=16, star=True, muted=True)),
+    ("row",  320, "Marketing site", dict(indent=16, star=True, muted=True)),
+    ("row",  352, "Routines", {}),
+    ("row",  384, "Artifacts", {}),
+    ("label", 416, "ORG", {}),
+    ("row",  448, "Agents", {}),
+    ("row",  480, "Skills", {}),
+    ("row",  512, "Connectors", {}),
+    ("row",  544, "Audit", {}),
+    ("label", 576, "RECENT", {}),
+    ("row",  608, "PAP-670 clean up left nav", dict(muted=True)),
+    ("row",  640, "PAP-664 destructive token", dict(muted=True)),
+    ("row",  672, "PAP-659 connectors UX", dict(muted=True)),
 ]
 
 OLD_NAV = [
