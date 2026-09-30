@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800"
+     font-family="-apple-system, system-ui, sans-serif" fill="#fff" stroke="#000" stroke-width="1.5">
+  <!-- PAP-670 new left nav in context (desktop 1280x800) -->
+  <rect x="0" y="0" width="1280" height="800" />
+  <rect x="0" y="0" width="240" height="800" rx="0" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <rect x="8" y="12" width="224" height="32" rx="6" fill="none" stroke="none" stroke-width="1.5" />
+  <rect x="24" y="18" width="20" height="20" rx="4" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="33" font-size="14" text-anchor="start" stroke="none" fill="#000" font-weight="bold">Paperclip</text>
+  <path d="M200,25 l4,4 l4,-4" fill="none" stroke="#666" stroke-width="1.5" />
+  <rect x="24" y="72" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="85" font-size="14" text-anchor="start" stroke="none" fill="#000">New Task</text>
+  <rect x="188" y="66" width="28" height="28" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <rect x="194" y="72" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="24" y="120" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">WORK</text>
+  <rect x="24" y="136" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="149" font-size="14" text-anchor="start" stroke="none" fill="#000">Chat</text>
+  <rect x="8" y="160" width="224" height="32" rx="6" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <rect x="24" y="168" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="181" font-size="14" text-anchor="start" stroke="none" fill="#000" font-weight="600">Tasks</text>
+  <rect x="190" y="169" width="26" height="14" rx="7" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="203" y="180" font-size="12" text-anchor="middle" stroke="none" fill="#000">3</text>
+  <rect x="24" y="200" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="213" font-size="14" text-anchor="start" stroke="none" fill="#000">Projects</text>
+  <circle cx="48" cy="240" r="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="68" y="245" font-size="14" text-anchor="start" stroke="none" fill="#666">Design System</text>
+  <circle cx="48" cy="272" r="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="68" y="277" font-size="14" text-anchor="start" stroke="none" fill="#666">Marketing site</text>
+  <rect x="24" y="296" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="309" font-size="14" text-anchor="start" stroke="none" fill="#000">Routines</text>
+  <rect x="24" y="328" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="341" font-size="14" text-anchor="start" stroke="none" fill="#000">Artifacts</text>
+  <text x="24" y="368" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">ORG</text>
+  <rect x="24" y="392" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="405" font-size="14" text-anchor="start" stroke="none" fill="#000">Agents</text>
+  <rect x="24" y="424" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="437" font-size="14" text-anchor="start" stroke="none" fill="#000">Skills</text>
+  <rect x="24" y="456" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="469" font-size="14" text-anchor="start" stroke="none" fill="#000">Connectors</text>
+  <rect x="24" y="488" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="501" font-size="14" text-anchor="start" stroke="none" fill="#000">Audit</text>
+  <text x="24" y="528" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">RECENT</text>
+  <rect x="24" y="552" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="565" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-670 clean up left nav</text>
+  <rect x="24" y="584" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="597" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-664 destructive token</text>
+  <rect x="24" y="616" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="629" font-size="14" text-anchor="start" stroke="none" fill="#666">PAP-659 connectors UX</text>
+  <rect x="0" y="744" width="240" height="56" rx="0" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <circle cx="32" cy="772" r="10" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="52" y="777" font-size="14" text-anchor="start" stroke="none" fill="#000">Scott</text>
+  <line x1="240" y1="0" x2="240" y2="800" stroke="#000" stroke-width="1.5" />
+  <text x="288" y="48" font-size="20" text-anchor="start" stroke="none" fill="#000" font-weight="bold">Tasks</text>
+  <rect x="288" y="80" width="168" height="32" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <rect x="300" y="88" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="328" y="101" font-size="14" text-anchor="start" stroke="none" fill="#000" font-weight="600">Views: Mine</text>
+  <path d="M436,94 l4,4 l4,-4" fill="none" stroke="#666" stroke-width="1.5" />
+  <rect x="472" y="80" width="88" height="32" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="516" y="101" font-size="14" text-anchor="middle" stroke="none" fill="#000">+ New</text>
+  <rect x="584" y="80" width="280" height="32" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <rect x="596" y="88" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="624" y="101" font-size="14" text-anchor="start" stroke="none" fill="#666">Search tasks…</text>
+  <rect x="936" y="80" width="80" height="32" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="976" y="101" font-size="12" text-anchor="middle" stroke="none" fill="#666">Filter</text>
+  <rect x="1024" y="80" width="80" height="32" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="1064" y="101" font-size="12" text-anchor="middle" stroke="none" fill="#666">Sort</text>
+  <rect x="1112" y="80" width="80" height="32" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="1152" y="101" font-size="12" text-anchor="middle" stroke="none" fill="#666">Group</text>
+  <rect x="1208" y="80" width="48" height="32" rx="6" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <rect x="1220" y="88" width="16" height="16" rx="3" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="288" y="152" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">TODAY</text>
+  <line x1="288" y1="160" x2="1256" y2="160" stroke="#666" stroke-width="1" />
+  <circle cx="296" cy="184" r="4" fill="#000" stroke="#000" stroke-width="1.5" />
+  <circle cx="320" cy="184" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="181" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-670 clean up left nav, make space for chat</text>
+  <text x="344" y="198" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in progress</text>
+  <circle cx="1104" cy="184" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="188" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="208" x2="1256" y2="208" stroke="#666" stroke-width="1" />
+  <circle cx="296" cy="232" r="4" fill="#000" stroke="#000" stroke-width="1.5" />
+  <circle cx="320" cy="232" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="229" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-664 destructive button token</text>
+  <text x="344" y="246" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in progress</text>
+  <circle cx="1104" cy="232" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="236" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="256" x2="1256" y2="256" stroke="#666" stroke-width="1" />
+  <circle cx="320" cy="280" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="277" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-659 simplify connectors UX</text>
+  <text x="344" y="294" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in progress</text>
+  <circle cx="1104" cy="280" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="284" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="304" x2="1256" y2="304" stroke="#666" stroke-width="1" />
+  <circle cx="320" cy="328" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="325" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-649 local Sentry setup</text>
+  <text x="344" y="342" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in progress</text>
+  <circle cx="1104" cy="328" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="332" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <text x="288" y="392" font-size="12" text-anchor="start" stroke="none" fill="#666" font-weight="600" font-family="ui-monospace, SFMono-Regular, monospace">EARLIER</text>
+  <line x1="288" y1="400" x2="1256" y2="400" stroke="#666" stroke-width="1" />
+  <circle cx="320" cy="424" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="421" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-640 in-progress icon animation</text>
+  <text x="344" y="438" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in review</text>
+  <circle cx="1104" cy="424" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="428" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="448" x2="1256" y2="448" stroke="#666" stroke-width="1" />
+  <circle cx="320" cy="472" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="469" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-628 Bucket A papercuts</text>
+  <text x="344" y="486" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in review</text>
+  <circle cx="1104" cy="472" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="476" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="496" x2="1256" y2="496" stroke="#666" stroke-width="1" />
+  <circle cx="320" cy="520" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="517" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-612 relative timestamps</text>
+  <text x="344" y="534" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in review</text>
+  <circle cx="1104" cy="520" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="524" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="544" x2="1256" y2="544" stroke="#666" stroke-width="1" />
+  <circle cx="320" cy="568" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="565" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-601 verify primary instance</text>
+  <text x="344" y="582" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in review</text>
+  <circle cx="1104" cy="568" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="572" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="592" x2="1256" y2="592" stroke="#666" stroke-width="1" />
+  <circle cx="320" cy="616" r="7" fill="#fff" stroke="#000" stroke-width="1.5" />
+  <text x="344" y="613" font-size="14" text-anchor="start" stroke="none" fill="#000">PAP-584 first-task redesign</text>
+  <text x="344" y="630" font-size="12" text-anchor="start" stroke="none" fill="#666">assigned to me · in review</text>
+  <circle cx="1104" cy="616" r="9" fill="#e6e6e6" stroke="#000" stroke-width="1.5" />
+  <text x="1248" y="620" font-size="12" text-anchor="end" stroke="none" fill="#666">2h</text>
+  <line x1="288" y1="640" x2="1256" y2="640" stroke="#666" stroke-width="1" />
+  <rect x="0" y="8" width="240" height="48" rx="4" fill="none" stroke="#d33" stroke-width="1.5" stroke-dasharray="5 4" />
+  <rect x="8" y="96" width="224" height="256" rx="4" fill="none" stroke="#d33" stroke-width="1.5" stroke-dasharray="5 4" />
+  <circle cx="260" cy="28" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="32" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">1</text>
+  <circle cx="260" cy="80" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="84" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">2</text>
+  <circle cx="260" cy="144" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="148" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">3</text>
+  <circle cx="260" cy="176" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="180" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">4</text>
+  <circle cx="260" cy="208" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="212" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">5</text>
+  <circle cx="260" cy="400" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="404" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">6</text>
+  <circle cx="260" cy="528" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="532" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">7</text>
+  <circle cx="260" cy="772" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="260" y="776" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">8</text>
+  <circle cx="464" cy="56" r="11" fill="#fff" stroke="#d33" stroke-width="1.5" />
+  <text x="464" y="60" font-size="12" text-anchor="middle" stroke="none" fill="#d33" font-weight="bold">9</text>
+</svg>
