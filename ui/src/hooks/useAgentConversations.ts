@@ -5,6 +5,7 @@ import { agentChatsApi } from "@/api/agentChats";
 import { agentsApi } from "@/api/agents";
 import { authApi } from "@/api/auth";
 import { useRecentAgentChats } from "@/lib/recent-agent-chats";
+import { resourceMembershipState, useResourceMemberships } from "@/hooks/useResourceMemberships";
 import { queryKeys } from "@/lib/queryKeys";
 
 export interface AgentConversation {
@@ -42,6 +43,13 @@ export function useAgentConversations(companyId: string | null, enabled: boolean
     enabled: !!companyId,
   });
   const agents = useMemo(() => agentsQuery.data ?? [], [agentsQuery.data]);
+  const membershipsQuery = useResourceMemberships(companyId);
+  // Same rule the Agents section of the sidebar uses: terminated agents and
+  // agents you have left are not people you can chat with.
+  const eligibleAgents = useMemo(() => agents.filter((agent) =>
+    agent.status !== "terminated"
+    && (!membershipsQuery.isSuccess || resourceMembershipState(membershipsQuery.data, "agent", agent.id) !== "left")),
+  [agents, membershipsQuery.data, membershipsQuery.isSuccess]);
   const recentIds = useRecentAgentChats(companyId ?? "", userId);
 
   const chats = useQueries({
@@ -74,6 +82,7 @@ export function useAgentConversations(companyId: string | null, enabled: boolean
   return {
     agents,
     agentsQuery,
+    eligibleAgents,
     conversations,
     recentIds,
     loading: agentsQuery.isPending || session.isPending || (enabled && chats.some((chat) => chat.isPending && chat.fetchStatus !== "idle")),

@@ -8,6 +8,7 @@ import { ChatContextualSidebar } from "./ChatContextualSidebar";
 const mockLocation = vi.hoisted(() => ({ pathname: "/PAP/chats/cto", search: "" }));
 const mockConversations = vi.hoisted(() => ({
   agents: [] as Array<Record<string, unknown>>,
+  eligibleAgents: [] as Array<Record<string, unknown>>,
   conversations: [] as Array<{ agent: Record<string, unknown>; issue: Record<string, unknown> | null }>,
 }));
 
@@ -27,13 +28,14 @@ vi.mock("@/context/SidebarContext", () => ({
 vi.mock("@/hooks/useAgentConversations", () => ({
   useAgentConversations: () => ({
     agents: mockConversations.agents,
+    eligibleAgents: mockConversations.eligibleAgents,
     agentsQuery: { isPending: false, error: null, refetch: vi.fn() },
     conversations: mockConversations.conversations,
     loading: false,
   }),
 }));
 vi.mock("./AgentChatPicker", () => ({ AgentChatPicker: () => null }));
-vi.mock("./AgentIconPicker", () => ({ AgentIcon: () => <span data-testid="agent-icon" /> }));
+vi.mock("./AgentAvatar", () => ({ AgentAvatar: () => <span data-slot="agent-avatar" /> }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -47,12 +49,16 @@ describe("ChatContextualSidebar", () => {
   const ceo = agent("ceo", "CEO", "Chief executive");
   const cto = agent("cto", "CTO", "Chief technologist");
   const qa = agent("qa", "QA", "Quality");
+  const designer = agent("designer", "Designer", "Design");
+  const fired = agent("fired", "Fired", "Gone");
 
   beforeEach(() => {
     container = document.createElement("div");
     document.body.appendChild(container);
     mockLocation.pathname = "/PAP/chats/cto";
-    mockConversations.agents = [ceo, cto, qa];
+    mockConversations.agents = [ceo, cto, qa, designer, fired];
+    // `fired` is ineligible (terminated or left) so the hook leaves it out.
+    mockConversations.eligibleAgents = [ceo, cto, qa, designer];
     mockConversations.conversations = [
       { agent: cto, issue: { id: "i-2", updatedAt: new Date().toISOString() } },
       { agent: ceo, issue: { id: "i-1", updatedAt: new Date().toISOString() } },
@@ -73,11 +79,12 @@ describe("ChatContextualSidebar", () => {
     return [...container.querySelectorAll("a[data-agent-id]")].map((row) => row.getAttribute("data-agent-id"));
   }
 
-  it("lists only the agents you have conversations with, in conversation order", () => {
+  it("lists every eligible agent: conversations first, then the rest by name", () => {
     const root = render();
     expect(container.textContent).toContain("Teammates");
-    expect(rowNames()).toEqual(["cto", "ceo"]);
-    expect(container.textContent).not.toContain("QA");
+    expect(rowNames()).toEqual(["cto", "ceo", "designer", "qa"]);
+    expect(container.textContent).not.toContain("Fired");
+    expect(container.querySelectorAll('[data-slot="agent-avatar"]')).toHaveLength(4);
     expect(container.querySelector('a[href="/agents"]')?.textContent).toContain("Browse all agents");
     act(() => root.unmount());
   });
@@ -88,20 +95,29 @@ describe("ChatContextualSidebar", () => {
     act(() => root.unmount());
   });
 
-  it("keeps a row for an agent opened before its first message", () => {
+  it("marks an agent opened before its first message without moving it", () => {
     mockLocation.pathname = "/PAP/chats/qa";
     const root = render();
-    expect(rowNames()).toEqual(["qa", "cto", "ceo"]);
+    expect(rowNames()).toEqual(["cto", "ceo", "designer", "qa"]);
     expect(container.querySelector('a[aria-current="page"]')?.getAttribute("data-agent-id")).toBe("qa");
     act(() => root.unmount());
   });
 
-  it("offers to start a chat when there are no conversations", () => {
+  it("still lists every agent when there are no conversations", () => {
     mockLocation.pathname = "/PAP/chats";
     mockConversations.conversations = [];
     const root = render();
+    expect(rowNames()).toEqual(["ceo", "cto", "designer", "qa"]);
+    act(() => root.unmount());
+  });
+
+  it("explains an empty rail when no agent is eligible", () => {
+    mockLocation.pathname = "/PAP/chats";
+    mockConversations.conversations = [];
+    mockConversations.eligibleAgents = [];
+    const root = render();
     expect(rowNames()).toEqual([]);
-    expect(container.textContent).toContain("No conversations yet.");
+    expect(container.textContent).toContain("No agents to chat with yet.");
     act(() => root.unmount());
   });
 });

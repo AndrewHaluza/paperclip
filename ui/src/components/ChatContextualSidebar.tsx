@@ -7,7 +7,7 @@ import { Link, useLocation, useNavigate } from "@/lib/router";
 import { timeAgo } from "@/lib/timeAgo";
 import { agentRouteRef, cn } from "@/lib/utils";
 import { AgentChatPicker } from "./AgentChatPicker";
-import { AgentIcon } from "./AgentIconPicker";
+import { AgentAvatar } from "./AgentAvatar";
 import { ContextualSidebarFrame } from "./ContextualSidebarFrame";
 import { contextualSidebarStyles } from "./contextual-sidebar-styles";
 import { Button } from "./ui/button";
@@ -28,21 +28,29 @@ export function ChatContextualSidebar() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const { agents, agentsQuery, conversations, loading } = useAgentConversations(selectedCompanyId, true);
+  const { agents, agentsQuery, eligibleAgents, conversations, loading } = useAgentConversations(selectedCompanyId, true);
 
   const activeRef = decodeURIComponent(location.pathname.match(/\/chats\/([^/]+)/)?.[1] ?? "");
   const activeId = agents.find((agent) => agent.id === activeRef || agentRouteRef(agent) === activeRef)?.id;
 
   const rows = useMemo(() => {
-    // The open conversation always has a row, even before its first message.
-    const listed = conversations.some(({ agent }) => agent.id === activeId);
-    const active = !listed ? agents.find((agent) => agent.id === activeId) : undefined;
-    const all: AgentConversation[] = active ? [{ agent: active, issue: null }, ...conversations] : conversations;
+    // Every agent you can chat with has a row: the ones you have talked to
+    // first, most recent first, then everyone else by name. The open
+    // conversation always keeps its row, even before its first message.
+    const listed = new Set(conversations.map(({ agent }) => agent.id));
+    const rest = eligibleAgents
+      .filter((agent) => !listed.has(agent.id))
+      .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" }))
+      .map((agent): AgentConversation => ({ agent, issue: null }));
+    const open = activeId && !listed.has(activeId) && !rest.some(({ agent }) => agent.id === activeId)
+      ? agents.find((agent) => agent.id === activeId)
+      : undefined;
+    const all: AgentConversation[] = [...(open ? [{ agent: open, issue: null }] : []), ...conversations, ...rest];
     const query = search.trim().toLowerCase();
     if (!query) return all;
     return all.filter(({ agent }) =>
       [agent.name, agent.title ?? "", agent.role].some((field) => field.toLowerCase().includes(query)));
-  }, [activeId, agents, conversations, search]);
+  }, [activeId, agents, eligibleAgents, conversations, search]);
 
   return (
     <ContextualSidebarFrame
@@ -70,8 +78,8 @@ export function ChatContextualSidebar() {
         />
         <Input
           type="search"
-          aria-label="Find a conversation"
-          placeholder="Find a conversation"
+          aria-label="Find an agent"
+          placeholder="Find an agent"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           className="h-8 w-full pl-8 text-xs"
@@ -83,23 +91,10 @@ export function ChatContextualSidebar() {
           Teammates
         </div>
         {loading && rows.length === 0 ? (
-          <p role="status" className="px-2 py-2 text-xs text-muted-foreground">Loading conversations…</p>
+          <p role="status" className="px-2 py-2 text-xs text-muted-foreground">Loading agents…</p>
         ) : rows.length === 0 ? (
           <div className="px-2 py-2 text-xs text-muted-foreground">
-            {search.trim() ? (
-              <>No conversations match “{search.trim()}”.</>
-            ) : (
-              <>
-                No conversations yet.{" "}
-                <button
-                  type="button"
-                  className="text-foreground underline-offset-2 hover:underline"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  Start one
-                </button>
-              </>
-            )}
+            {search.trim() ? <>No agents match “{search.trim()}”.</> : <>No agents to chat with yet.</>}
           </div>
         ) : (
           <div data-slot="contextual-sidebar-group" className="flex flex-col gap-1">
@@ -123,7 +118,7 @@ export function ChatContextualSidebar() {
                       : "text-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   )}
                 >
-                  <AgentIcon icon={agent.icon} className="h-7 w-7 shrink-0" />
+                  <AgentAvatar agent={agent} size={32} />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline gap-2">
                       <span className="min-w-0 flex-1 truncate text-(length:--text-compact) font-medium text-foreground">
