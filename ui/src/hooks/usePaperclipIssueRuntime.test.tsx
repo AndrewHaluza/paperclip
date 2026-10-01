@@ -11,7 +11,9 @@ import type {
 import { usePaperclipIssueRuntime } from "./usePaperclipIssueRuntime";
 
 const { useExternalStoreRuntimeMock } = vi.hoisted(() => ({
-  useExternalStoreRuntimeMock: vi.fn(() => ({ kind: "runtime" })),
+  useExternalStoreRuntimeMock: vi.fn(
+    (_adapter: ExternalStoreAdapter<ThreadMessage>) => ({ kind: "runtime" }),
+  ),
 }));
 
 vi.mock("@assistant-ui/react", () => ({
@@ -167,6 +169,56 @@ describe("usePaperclipIssueRuntime", () => {
     expect(firstOnSend).not.toHaveBeenCalled();
     expect(secondOnSend).toHaveBeenCalledWith({
       body: "latest callback",
+      reopen: undefined,
+      reassignment: undefined,
+    });
+
+    act(() => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  it("uses the latest callback before passive effects run", async () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const messages: ThreadMessage[] = [createUserMessage("message-1", "hello")];
+    const firstOnSend = vi.fn(async () => {});
+    const secondOnSend = vi.fn(async () => {});
+
+    act(() => {
+      root.render(
+        <HookHarness
+          messages={messages}
+          isRunning={false}
+          onSend={firstOnSend}
+        />,
+      );
+    });
+
+    let immediateSend: Promise<void> | undefined;
+    useExternalStoreRuntimeMock.mockImplementationOnce((adapter) => {
+      immediateSend = adapter.onNew?.(
+        createAppendMessage("synchronous runtime callback"),
+      );
+      return { kind: "runtime" };
+    });
+
+    act(() => {
+      root.render(
+        <HookHarness
+          messages={messages}
+          isRunning={false}
+          onSend={secondOnSend}
+        />,
+      );
+    });
+    await immediateSend;
+
+    expect(firstOnSend).not.toHaveBeenCalled();
+    expect(secondOnSend).toHaveBeenCalledWith({
+      body: "synchronous runtime callback",
       reopen: undefined,
       reassignment: undefined,
     });
