@@ -14,9 +14,10 @@ describe("codex local adapter metadata", () => {
     // Default to the concrete gpt-5.6-sol slug — Codex ships no metadata for the bare gpt-5.6
     // alias, so it must not be advertised or used as the default (it triggers a fallback warning).
     expect(DEFAULT_CODEX_LOCAL_MODEL).toBe("gpt-5.6-sol");
-    expect(modelIds.slice(0, 6)).toEqual([
+    expect(modelIds.slice(0, 7)).toEqual([
       "gpt-5.6-sol",
       "gpt-6-astra",
+      "gpt-6.1-sol",
       "gpt-6-sol",
       "gpt-6-luna",
       "gpt-5.6-terra",
@@ -25,12 +26,13 @@ describe("codex local adapter metadata", () => {
     expect(modelIds).not.toContain("gpt-5.6");
     expect(isCodexLocalFastModeSupported(DEFAULT_CODEX_LOCAL_MODEL)).toBe(true);
     expect(isCodexLocalFastModeSupported("gpt-6-astra")).toBe(true);
+    expect(isCodexLocalFastModeSupported("gpt-6.1-sol")).toBe(true);
     expect(isCodexLocalFastModeSupported("gpt-6-sol")).toBe(true);
     expect(modelIds).not.toContain("gpt-5.3-codex");
     expect(modelIds).not.toContain("gpt-5.3-codex-spark");
   });
 
-  it.each(["gpt-6-astra", "gpt-6-sol", " gpt-6-sol ", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6"])("uses the reasoning efforts advertised for %s", (model) => {
+  it.each(["gpt-6-astra", "gpt-6.1-sol", "gpt-6-sol", " gpt-6-sol ", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6"])("uses the reasoning efforts advertised for %s", (model) => {
     expect(codexLocalReasoningEffortsForModel(model)).toEqual([
       "low",
       "medium",
