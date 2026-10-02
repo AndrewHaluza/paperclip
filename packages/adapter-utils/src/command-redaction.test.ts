@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
+
+describe("explicit diagnostic credential forms", () => {
+  it("masks suffixed CLI options and encoded JSON headers with whitespace", () => {
+    const jwt = `${Buffer.from(' {"alg":"HS256","typ":"JWT"}').toString("base64url")}.abcdefghijk.abcdefghijkl`;
+    expect(redactCommandText("tool --api-key-prod sensitivevalue --token-policy readable"))
+      .not.toContain("sensitivevalue");
+    expect(redactCommandText(`provider ${jwt}`)).not.toContain(jwt);
+    expect(redactCommandText("plan.security.credentials.md")).toBe("plan.security.credentials.md");
+  });
+});
 import {
   REDACTED_COMMAND_TEXT_VALUE,
   redactDiagnosticText,
+  redactCommandText,
 } from "./command-redaction.js";
 
 describe("redactDiagnosticText", () => {

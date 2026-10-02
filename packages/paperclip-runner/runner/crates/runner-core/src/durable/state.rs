@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -1517,7 +1518,21 @@ fn sensitive_key(key: &str, value: &Value) -> bool {
     ) {
         return !value.is_number();
     }
-    let credential_name = normalized.strip_suffix("value").unwrap_or(&normalized);
+    let credential_name = [
+        "value",
+        "header",
+        "production",
+        "prod",
+        "development",
+        "dev",
+        "test",
+        "staging",
+        "primary",
+        "secondary",
+    ]
+    .iter()
+    .find_map(|suffix| normalized.strip_suffix(suffix))
+    .unwrap_or(&normalized);
     [
         "authorization",
         "authorizationcode",
@@ -2029,9 +2044,14 @@ pub(crate) fn redact_sensitive_text_values(input: &str) -> String {
         }
         let candidate_end = without_sentence_period(jwt_start, jwt_end);
         if candidate_end > jwt_start {
-            let candidate = &normalized[jwt_start..candidate_end];
+            let candidate = &input[jwt_start..candidate_end];
             let segments = candidate.split('.').collect::<Vec<_>>();
-            if candidate.starts_with("eyj")
+            let json_header = URL_SAFE_NO_PAD
+                .decode(segments[0])
+                .ok()
+                .and_then(|decoded| serde_json::from_slice::<Value>(&decoded).ok())
+                .is_some_and(|header| header.get("alg").is_some_and(Value::is_string));
+            if (candidate.starts_with("eyJ") || json_header)
                 && matches!(segments.len(), 3 | 5)
                 && segments.iter().all(|segment| {
                     segment.len() >= 8
@@ -2080,11 +2100,23 @@ pub(crate) fn redact_sensitive_text_values(input: &str) -> String {
         // A bare "bearer token" or "bearer authentication" is ordinary prose.
         // Quoted values, opaque formats, and long values indicate credentials;
         // explicit Authorization fields are independently redacted below.
-        if end > value_start
-            && (quote.is_some()
-                || candidate.len() >= 20
-                || candidate.bytes().any(|value| !value.is_ascii_lowercase()))
-        {
+        let prose_term = matches!(
+            candidate
+                .trim_end_matches(['.', ',', ';', ':', '!', '?'])
+                .to_ascii_lowercase()
+                .as_str(),
+            "token"
+                | "tokens"
+                | "authentication"
+                | "authorization"
+                | "credential"
+                | "credentials"
+                | "scheme"
+                | "schemes"
+                | "flow"
+                | "flows"
+        );
+        if end > value_start && (quote.is_some() || !prose_term) {
             ranges.push((value_start, end));
         }
     }
@@ -2191,9 +2223,24 @@ pub(crate) fn redact_sensitive_text_values(input: &str) -> String {
         let is_compound_field = key_is_compound
             && (full_name.contains('_')
                 || full_name.chars().any(|value| value.is_ascii_uppercase()));
+        // Opaque values in diagnostic key/value pairs remain masked. Plain
+        // words such as "secret manager" do not establish an assignment.
+        let (candidate_start, candidate_quote) = quoted_value_start(separator);
+        let candidate_end = value_end(candidate_start);
+        // Uppercase symbolic acceptance markers in prose are not evidence of
+        // credentials. Explicit assignments and flags still mask any value.
+        let opaque_value = !input[candidate_start..candidate_end]
+            .bytes()
+            .any(|value| value.is_ascii_uppercase())
+            && (candidate_quote.is_some()
+                || (candidate_end.saturating_sub(candidate_start) >= 8
+                    && bytes[candidate_start..candidate_end].iter().any(|value| {
+                        value.is_ascii_digit() || matches!(value, b'_' | b'-' | b'/' | b'+' | b'=')
+                    })));
         let has_whitespace_separator = separator > whitespace_start
             && (is_compound_field
                 || is_cli_key
+                || opaque_value
                 || (key == "authorization" && has_authorization_scheme));
         if !has_assignment_separator && !has_whitespace_separator {
             continue;
@@ -2352,6 +2399,30 @@ mod tests {
             precondition: None,
             payload: json!({}),
         }
+    }
+
+    #[test]
+    fn diagnostic_credentials_remain_masked_without_prose_false_positives() {
+        let jwt = format!(
+            "{}.abcdefghijk.abcdefghijkl",
+            URL_SAFE_NO_PAD.encode(br#" {"alg":"HS256","typ":"JWT"}"#)
+        );
+        assert_eq!(redact_text(&jwt), "[REDACTED]");
+        assert_eq!(redact_text("Bearer abcdefghijkl"), "Bearer [REDACTED]");
+        assert_eq!(
+            redact_text("request failed token secret-value"),
+            "request failed token [REDACTED]"
+        );
+        assert_eq!(
+            redact_text("Use a secret manager for credential handling and bearer authentication."),
+            "Use a secret manager for credential handling and bearer authentication."
+        );
+        assert_eq!(
+            sanitize_value(
+                &json!({"authorizationHeader": "abcdefghijkl", "apiKeyProduction": "sensitivevalue", "credentialHandling": "harness"})
+            ),
+            json!({"authorizationHeader": "[REDACTED]", "apiKeyProduction": "[REDACTED]", "credentialHandling": "harness"})
+        );
     }
 
     #[test]
@@ -3468,7 +3539,6 @@ mod tests {
             "Use token budgeting and secret detection.",
             "Use bearer tokens for authentication. Prefer bearer authentication.",
             "token arbitrary",
-            "a token system-secret",
             "one-token rule",
             "executor.customTools.integrations.list",
             "paperclip.question_set.v1",
@@ -3609,11 +3679,11 @@ mod tests {
         );
         assert_eq!(
             redact_text("request failed token secret-value; reason=expired"),
-            "request failed token secret-value; reason=expired"
+            "request failed token [REDACTED]; reason=expired"
         );
         assert_eq!(
             redact_text("provider rejected API key\tsecret-value retry"),
-            "provider rejected API key\tsecret-value retry"
+            "provider rejected API key\t[REDACTED] retry"
         );
         assert_eq!(
             redact_text("Authorization: Basic dXNlcjpwYXNz retry"),

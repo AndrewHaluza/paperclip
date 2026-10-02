@@ -24,6 +24,10 @@ const correlation = {
 };
 
 describe("run-scoped semantic tool authority", () => {
+  it("masks qualified credential fields and standalone opaque bearer values in audit copies", () => {
+    expect(redactPaperclipSemanticValue({ authorizationHeader: "abcdefghijkl", apiKeyProduction: "sensitivevalue", body: "Bearer abcdefghijkl" }))
+      .toEqual({ authorizationHeader: PAPERCLIP_SEMANTIC_REDACTED, apiKeyProduction: PAPERCLIP_SEMANTIC_REDACTED, body: PAPERCLIP_SEMANTIC_REDACTED });
+  });
   it("preserves credential-related prose and metadata in diagnostic copies", () => {
     const value = {
       body: "Use a secret manager for credential handling and bearer authentication with bearer tokens.",

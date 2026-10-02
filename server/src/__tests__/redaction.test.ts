@@ -1,5 +1,18 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+
+describe("explicit diagnostic credential forms", () => {
+  it("masks qualified credential fields while preserving metadata", () => {
+    expect(redactEventPayload({ authorizationHeader: "abcdefghijkl", apiKeyProduction: "sensitivevalue", credentialHandling: "harness", tokenPolicy: "least privilege" }))
+      .toEqual({ authorizationHeader: "***REDACTED***", apiKeyProduction: "***REDACTED***", credentialHandling: "harness", tokenPolicy: "least privilege" });
+  });
+  it("masks standalone bearer values and whitespace-prefixed JSON token headers", () => {
+    const jwt = `${Buffer.from(' {"alg":"HS256","typ":"JWT"}').toString("base64url")}.abcdefghijk.abcdefghijkl`;
+    expect(redactSensitiveText("provider said Bearer abcdefghijkl")).not.toContain("abcdefghijkl");
+    expect(redactEventPayload({ diagnostic: jwt })?.diagnostic).toBe("***REDACTED***");
+    expect(redactSensitiveText("Use bearer authentication and bearer tokens.")).toBe("Use bearer authentication and bearer tokens.");
+  });
+});
 import {
   PRP_V1_EVENT_TYPES,
   PRP_V2_EVENT_TYPES,
