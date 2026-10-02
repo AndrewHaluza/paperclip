@@ -41,6 +41,7 @@ import {
   trustAuthorizationPolicySchema,
 } from "./trust-policy.js";
 import { objectWithoutDefaults } from "./partial.js";
+import { questionSetToAskUserQuestionsPayload } from "../question-set.js";
 
 export const issueBlockedInboxStateSchema = z.enum([
   "needs_attention",
@@ -1381,18 +1382,20 @@ export const paperclipQuestionSetPayloadSchema = z
     }
   });
 
+const askUserQuestionsPayloadFields = {
+  version: z.literal(1),
+  title: z.string().trim().max(240).nullable().optional(),
+  submitLabel: z.string().trim().max(120).nullable().optional(),
+  supersedeOnUserComment: z.boolean().optional(),
+  questions: z.array(askUserQuestionsQuestionSchema).min(1).max(64),
+  /** Exact canonical presentation retained for a recovered harness request. */
+  questionSet: paperclipQuestionSetPayloadSchema.optional(),
+  /** Stable correlation for draft handoff from a live runtime request. */
+  runtimeRequestId: z.string().trim().min(1).max(255).nullable().optional(),
+};
+
 export const askUserQuestionsPayloadSchema = z
-  .object({
-    version: z.literal(1),
-    title: z.string().trim().max(240).nullable().optional(),
-    submitLabel: z.string().trim().max(120).nullable().optional(),
-    supersedeOnUserComment: z.boolean().optional(),
-    questions: z.array(askUserQuestionsQuestionSchema).min(1).max(64),
-    /** Exact canonical presentation retained for a recovered harness request. */
-    questionSet: paperclipQuestionSetPayloadSchema.optional(),
-    /** Stable correlation for draft handoff from a live runtime request. */
-    runtimeRequestId: z.string().trim().min(1).max(255).nullable().optional(),
-  })
+  .object(askUserQuestionsPayloadFields)
   .superRefine((value, ctx) => {
     const seenQuestionIds = new Set<string>();
     for (const [questionIndex, question] of value.questions.entries()) {
@@ -1905,7 +1908,7 @@ const createIssueThreadInteractionCommon = {
 
 // Validate dual representations on creation, not when reading historical rows.
 // Otherwise a partial canonical form can hide required storage questions.
-const createAskUserQuestionsPayloadSchema = askUserQuestionsPayloadSchema.superRefine((value, ctx) => {
+const createLegacyAskUserQuestionsPayloadSchema = askUserQuestionsPayloadSchema.superRefine((value, ctx) => {
   if (!value.questionSet) return;
   const shown = new Set(value.questionSet.questions.map((question) => question.id));
   const stored = new Set(value.questions.map((question) => question.id));
@@ -1940,6 +1943,19 @@ const createAskUserQuestionsPayloadSchema = askUserQuestionsPayloadSchema.superR
     }
   }
 });
+
+const createAskUserQuestionsPayloadSchema = z.union([
+  createLegacyAskUserQuestionsPayloadSchema,
+  z.object({
+    ...askUserQuestionsPayloadFields,
+    // Do not discard an explicitly supplied conflicting compatibility form.
+    questions: z.never().optional(),
+    questionSet: paperclipQuestionSetPayloadSchema,
+  }).transform(({ questions: _questions, ...value }): z.input<typeof createLegacyAskUserQuestionsPayloadSchema> => ({
+    ...questionSetToAskUserQuestionsPayload(value.questionSet),
+    ...value,
+  })).pipe(createLegacyAskUserQuestionsPayloadSchema),
+]);
 
 export const createIssueThreadInteractionSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -2010,6 +2026,9 @@ export const createIssueThreadInteractionSchema = z.discriminatedUnion("kind", [
 ]);
 
 export type CreateIssueThreadInteraction = z.infer<
+  typeof createIssueThreadInteractionSchema
+>;
+export type CreateIssueThreadInteractionInput = z.input<
   typeof createIssueThreadInteractionSchema
 >;
 

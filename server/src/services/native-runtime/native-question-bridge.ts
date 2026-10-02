@@ -5,10 +5,11 @@ import { heartbeatRuns, issueThreadInteractions } from "@paperclipai/db";
 import type {
   AskUserQuestionsAnswer,
   AskUserQuestionsInteraction,
-  AskUserQuestionsQuestionOption,
   PaperclipQuestionSetPayload,
   RespondIssueThreadInteraction,
 } from "@paperclipai/shared";
+
+import { questionSetToAskUserQuestionsPayload } from "@paperclipai/shared";
 
 import type { PrpEvent } from "../../vendor/paperclip-runner/index.js";
 import {
@@ -26,8 +27,6 @@ import type { NativeRunStoreBinding } from "./native-run-coordinator-store.js";
 
 const QUESTION_KEY_PREFIX = "paperclip-runner-question:";
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
-const TEXT_ANSWER_OPTION_ID = "paperclip_text_answer";
-const CUSTOM_ANSWER_OPTION_ID = "paperclip_custom_answer";
 export const NATIVE_QUESTION_CANCELLATION_CONTEXT_KEY = "nativeQuestionCancellation";
 
 type QueueCommand = (
@@ -83,61 +82,11 @@ function requestIdForInteraction(
     : requestId;
 }
 
-function uniqueSyntheticOptionId(existing: readonly string[], preferred: string): string {
-  const ids = new Set(existing);
-  if (!ids.has(preferred)) return preferred;
-  for (let suffix = 2; suffix < 10_000; suffix += 1) {
-    const candidate = `${preferred}_${suffix}`;
-    if (!ids.has(candidate)) return candidate;
-  }
-  throw new Error("native_question_synthetic_option_exhausted");
-}
-
 function toInteractionPayload(questionSet: PaperclipQuestionSet, runtimeRequestId: string) {
   return {
-    version: 1 as const,
-    ...(questionSet.title ? { title: questionSet.title.slice(0, 240) } : {}),
-    ...(questionSet.submitLabel ? { submitLabel: questionSet.submitLabel.slice(0, 120) } : {}),
-    questions: questionSet.questions.map((question) => {
-      const canonicalOptions = question.options ?? [];
-      const options: AskUserQuestionsQuestionOption[] = canonicalOptions.map((option) => ({
-        id: option.id,
-        label: option.label,
-        ...(option.description ? { description: option.description } : {}),
-      }));
-      if (question.answerMode === "text") {
-        options.push({
-          id: uniqueSyntheticOptionId([], TEXT_ANSWER_OPTION_ID),
-          label: question.header ?? "Type an answer",
-          ...(question.textValidation?.inputType
-            ? { description: `Expected ${question.textValidation.inputType} input` }
-            : {}),
-          freeText: true,
-        });
-      } else if (question.customAnswer?.enabled) {
-        options.push({
-          id: uniqueSyntheticOptionId(canonicalOptions.map((option) => option.id), CUSTOM_ANSWER_OPTION_ID),
-          label: question.customAnswer.label ?? "Other",
-          ...(question.customAnswer.placeholder ? { description: question.customAnswer.placeholder } : {}),
-          freeText: true,
-        });
-      }
-      return {
-        id: question.id,
-        prompt: question.prompt,
-        ...((question.helpText || question.header)
-          ? { helpText: question.helpText ?? question.header }
-          : {}),
-        selectionMode: question.answerMode === "multi_select" ? "multi" as const : "single" as const,
-        required: question.required,
-        allowOther: question.answerMode === "text" || question.customAnswer?.enabled === true,
-        options,
-      };
-    }),
-    questionSet: questionSet as PaperclipQuestionSetPayload,
+    ...questionSetToAskUserQuestionsPayload(questionSet),
     runtimeRequestId,
-    // A generic task comment cannot satisfy this provider request. Keep the
-    // card actionable until a validated answer or an explicit terminal action.
+    // A generic task comment cannot satisfy this provider request.
     supersedeOnUserComment: false,
   };
 }
@@ -151,6 +100,7 @@ function canonicalResponse(
     schema: "paperclip.question_response.v1",
     answers: {},
   };
+  const storageQuestions = questionSetToAskUserQuestionsPayload(questionSet).questions;
   for (const question of questionSet.questions) {
     const answer = answerByQuestionId.get(question.id);
     if (!answer) continue;
@@ -161,12 +111,8 @@ function canonicalResponse(
           : {}),
       };
     } else {
-      const customOptionId = question.customAnswer?.enabled
-        ? uniqueSyntheticOptionId(
-            (question.options ?? []).map((option) => option.id),
-            CUSTOM_ANSWER_OPTION_ID,
-          )
-        : null;
+      const customOptionId = storageQuestions.find((entry) => entry.id === question.id)
+        ?.options.find((option) => option.freeText)?.id ?? null;
       response.answers[question.id] = {
         selectedOptionIds: answer.optionIds.filter((optionId) => optionId !== customOptionId),
         ...(answer.otherText !== undefined && answer.otherText !== null

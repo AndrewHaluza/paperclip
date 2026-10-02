@@ -47,6 +47,7 @@ import type {
   CancelIssueThreadInteraction,
   ConnectionIntentInteraction,
   CreateIssueThreadInteraction,
+  CreateIssueThreadInteractionInput,
   InteractionResolverGovernance,
   IssueReviewPolicy,
   IssueThreadInteraction,
@@ -3309,7 +3310,7 @@ export function issueThreadInteractionService(
 
     create: async (
       issue: { id: string; companyId: string },
-      input: CreateIssueThreadInteraction,
+      input: CreateIssueThreadInteractionInput,
       actor: InteractionActor,
       options: CreateInteractionOptions = {},
     ) => {
