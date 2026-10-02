@@ -3,9 +3,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
 import { heartbeatRuns, issueThreadInteractions } from "@paperclipai/db";
 import type {
-  AskUserQuestionsAnswer,
   AskUserQuestionsInteraction,
-  PaperclipQuestionSetPayload,
   RespondIssueThreadInteraction,
 } from "@paperclipai/shared";
 
@@ -13,9 +11,7 @@ import { questionSetToAskUserQuestionsPayload } from "@paperclipai/shared";
 
 import type { PrpEvent } from "../../vendor/paperclip-runner/index.js";
 import {
-  parsePaperclipQuestionResponse,
   parsePaperclipQuestionSet,
-  type PaperclipQuestionResponse,
   type PaperclipQuestionSet,
 } from "../../vendor/paperclip-runner/index.js";
 import { logger } from "../../middleware/logger.js";
@@ -24,6 +20,8 @@ import { logActivity } from "../activity-log.js";
 import { issueThreadInteractionService } from "../issue-thread-interactions.js";
 import { questionResponseDeliveryService } from "../question-response-delivery.js";
 import type { NativeRunStoreBinding } from "./native-run-coordinator-store.js";
+
+import { parseQuestionInteractionAnswers } from "../question-interaction-answers.js";
 
 const QUESTION_KEY_PREFIX = "paperclip-runner-question:";
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,159}$/;
@@ -91,38 +89,6 @@ function toInteractionPayload(questionSet: PaperclipQuestionSet, runtimeRequestI
   };
 }
 
-function canonicalResponse(
-  questionSet: PaperclipQuestionSetPayload,
-  answers: readonly AskUserQuestionsAnswer[],
-): PaperclipQuestionResponse {
-  const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
-  const response: PaperclipQuestionResponse = {
-    schema: "paperclip.question_response.v1",
-    answers: {},
-  };
-  const storageQuestions = questionSetToAskUserQuestionsPayload(questionSet).questions;
-  for (const question of questionSet.questions) {
-    const answer = answerByQuestionId.get(question.id);
-    if (!answer) continue;
-    if (question.answerMode === "text") {
-      response.answers[question.id] = {
-        ...(answer.otherText !== undefined && answer.otherText !== null
-          ? { text: answer.otherText }
-          : {}),
-      };
-    } else {
-      const customOptionId = storageQuestions.find((entry) => entry.id === question.id)
-        ?.options.find((option) => option.freeText)?.id ?? null;
-      response.answers[question.id] = {
-        selectedOptionIds: answer.optionIds.filter((optionId) => optionId !== customOptionId),
-        ...(answer.otherText !== undefined && answer.otherText !== null
-          ? { customText: answer.otherText }
-          : {}),
-      };
-    }
-  }
-  return parsePaperclipQuestionResponse(questionSet, response);
-}
 
 async function authorizedNativeRun(
   db: Pick<Db | DbTransaction, "select">,
@@ -264,7 +230,7 @@ export function validateNativeQuestionResponseInput(
 ): void {
   if (!requestIdForInteraction(interaction) || !interaction.payload.questionSet) return;
   try {
-    canonicalResponse(interaction.payload.questionSet, input.answers);
+    parseQuestionInteractionAnswers(interaction.payload.questionSet, input.answers);
   } catch (error) {
     throw unprocessable(
       error instanceof Error ? error.message : "Invalid native question response",
@@ -286,7 +252,7 @@ export async function deliverNativeQuestionResponse(
   // Fall through to durable fresh-wake delivery instead of waiting forever for
   // a command target that cannot return for this terminal run.
   if (!run || ["succeeded", "failed", "cancelled", "timed_out"].includes(run.status)) return "not_native";
-  const response = canonicalResponse(interaction.payload.questionSet, interaction.result.answers);
+  const response = parseQuestionInteractionAnswers(interaction.payload.questionSet, interaction.result.answers);
   const target = activeTargets.get(run.id);
   if (
     !target

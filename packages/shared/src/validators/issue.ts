@@ -1928,7 +1928,7 @@ const createLegacyAskUserQuestionsPayloadSchema = askUserQuestionsPayloadSchema.
       path: ["questionSet", "questions", index, field],
       message: `questionSet ${field} must match the corresponding questions entry.`,
     });
-    if (question.prompt !== storage.prompt) mismatch("prompt");
+    if (question.prompt.trim() !== storage.prompt) mismatch("prompt");
     // An omitted storage flag adds no constraint; an explicit flag must agree.
     if (storage.required !== undefined && question.required !== storage.required) mismatch("required");
     const mode = question.answerMode === "multi_select" ? "multi" : "single";
@@ -1938,7 +1938,7 @@ const createLegacyAskUserQuestionsPayloadSchema = askUserQuestionsPayloadSchema.
     } else {
       // Text/custom-answer sentinels are storage compatibility, not visible choices.
       const choices = storage.options.filter((option) => !option.freeText);
-      const canonical = new Map((question.options ?? []).map((option) => [option.id, option.label]));
+      const canonical = new Map((question.options ?? []).map((option) => [option.id, option.label.trim()]));
       if (choices.length !== canonical.size || choices.some((option) => canonical.get(option.id) !== option.label)) mismatch("options");
     }
   }

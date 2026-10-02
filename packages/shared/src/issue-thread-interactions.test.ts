@@ -45,6 +45,18 @@ describe("issue thread interaction schemas", () => {
     ]) expect(createIssueThreadInteractionSchema.safeParse({ kind: "ask_user_questions", payload: { version: 1, questionSet } }).success).toBe(false);
     expect(createIssueThreadInteractionSchema.safeParse({ kind: "ask_user_questions", payload: { version: 1 } }).success).toBe(false);
   });
+
+  it("preserves canonical display whitespace while deriving trimmed storage fields", () => {
+    const questionSet = { schema: "paperclip.question_set.v1", questions: [
+      { id: "scope", prompt: "  Review scope? \n", required: true, answerMode: "single_select", options: [{ id: "all", label: " All changes " }, { id: "selected", label: " Selected changes " }] },
+      { id: "repo", prompt: " Repository URL? ", required: true, answerMode: "text" },
+    ] };
+    const parsed = createIssueThreadInteractionSchema.parse({ kind: "ask_user_questions", payload: { version: 1, questionSet } });
+    if (parsed.kind !== "ask_user_questions") throw new Error("expected questions");
+    expect(parsed.payload.questionSet).toEqual(questionSet);
+    expect(parsed.payload.questions[0]).toMatchObject({ prompt: "Review scope?", options: [{ label: "All changes" }, { label: "Selected changes" }] });
+    expect(parsed.payload.questions[1].prompt).toBe("Repository URL?");
+  });
   it("defines canonical resolver policies and normalizes compatibility aliases", () => {
     expect(ISSUE_THREAD_INTERACTION_CANONICAL_RESOLVER_POLICIES).toEqual([
       "anyone",

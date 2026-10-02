@@ -239,6 +239,35 @@ describeEmbeddedPostgres("issueThreadInteractionService", () => {
     expect(answered.status).toBe("answered");
   });
 
+  it("rejects canonical text and custom answers that violate constraints before resolution", async () => {
+    const { companyId, issueId } = await seedSourceQuestionFixture({});
+    const issue = { id: issueId, companyId };
+    const cases = [
+      { textValidation: { minLength: 3, maxLength: 4 }, invalid: ["ab", "abcde"], valid: "abcd" },
+      { textValidation: { pattern: "^https://" }, invalid: ["http://example.test"], valid: "https://example.test" },
+      { textValidation: { inputType: "integer" as const, minimum: 2, maximum: 4 }, invalid: ["no", "3.5", "1", "5"], valid: "3" },
+      { textValidation: { inputType: "number" as const, minimum: 2, maximum: 4 }, invalid: ["Infinity", "1.9", "4.1"], valid: "2.5" },
+    ];
+    for (const [index, entry] of cases.entries()) {
+      const created = await interactionsSvc.create(issue, {
+        kind: "ask_user_questions", payload: { version: 1, questionSet: {
+          schema: "paperclip.question_set.v1", questions: [{ id: "value", prompt: "Value?", required: true, answerMode: "text", textValidation: entry.textValidation }],
+        } },
+      }, { userId: "local-board" });
+      for (const otherText of entry.invalid) {
+        await expect(interactionsSvc.answerQuestions(issue, created.id, { answers: [{ questionId: "value", optionIds: [], otherText }] }, { userId: "local-board" })).rejects.toThrow();
+        const [row] = await db.select().from(issueThreadInteractions).where(eq(issueThreadInteractions.id, created.id));
+        expect(row?.status, `case ${index}: ${otherText}`).toBe("pending");
+      }
+      expect((await interactionsSvc.answerQuestions(issue, created.id, { answers: [{ questionId: "value", optionIds: [], otherText: entry.valid }] }, { userId: "local-board" })).status).toBe("answered");
+    }
+    const custom = await interactionsSvc.create(issue, { kind: "ask_user_questions", payload: { version: 1, questionSet: {
+      schema: "paperclip.question_set.v1", questions: [{ id: "scope", prompt: "Scope?", required: true, answerMode: "single_select", options: [{ id: "all", label: "All" }, { id: "selected", label: "Selected" }], customAnswer: { enabled: true }, textValidation: { minLength: 3 } }],
+    } } }, { userId: "local-board" });
+    await expect(interactionsSvc.answerQuestions(issue, custom.id, { answers: [{ questionId: "scope", optionIds: [], otherText: "ab" }] }, { userId: "local-board" })).rejects.toThrow("at least 3");
+    expect((await interactionsSvc.answerQuestions(issue, custom.id, { answers: [{ questionId: "scope", optionIds: [], otherText: "abc" }] }, { userId: "local-board" })).status).toBe("answered");
+  });
+
   async function seedQuestionUser(companyId: string, userId: string, role = "member", status = "active") {
     await db.insert(authUsers).values({ id: userId, name: "Question recipient", email: `${randomUUID()}@example.test`, createdAt: new Date(), updatedAt: new Date() });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: userId, membershipRole: role, status });
