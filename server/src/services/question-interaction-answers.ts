@@ -1,18 +1,17 @@
-import type { AskUserQuestionsAnswer, PaperclipQuestionSetPayload } from "@paperclipai/shared";
-import { questionSetToAskUserQuestionsPayload } from "@paperclipai/shared";
+import type { AskUserQuestionsAnswer, AskUserQuestionsPayload, PaperclipQuestionSetPayload } from "@paperclipai/shared";
 import { parsePaperclipQuestionResponse, type PaperclipQuestionResponse } from "../vendor/paperclip-runner/index.js";
 
 /** Validate storage answers against the persisted canonical form before resolution. */
 export function parseQuestionInteractionAnswers(
   questionSet: PaperclipQuestionSetPayload,
   answers: readonly AskUserQuestionsAnswer[],
+  storageQuestions: AskUserQuestionsPayload["questions"],
 ): PaperclipQuestionResponse {
   const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
   const response: PaperclipQuestionResponse = {
     schema: "paperclip.question_response.v1",
     answers: {},
   };
-  const storageQuestions = questionSetToAskUserQuestionsPayload(questionSet).questions;
   for (const question of questionSet.questions) {
     const answer = answerByQuestionId.get(question.id);
     if (!answer) continue;

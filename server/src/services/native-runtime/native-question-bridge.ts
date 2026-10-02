@@ -230,7 +230,7 @@ export function validateNativeQuestionResponseInput(
 ): void {
   if (!requestIdForInteraction(interaction) || !interaction.payload.questionSet) return;
   try {
-    parseQuestionInteractionAnswers(interaction.payload.questionSet, input.answers);
+    parseQuestionInteractionAnswers(interaction.payload.questionSet, input.answers, interaction.payload.questions);
   } catch (error) {
     throw unprocessable(
       error instanceof Error ? error.message : "Invalid native question response",
@@ -252,7 +252,7 @@ export async function deliverNativeQuestionResponse(
   // Fall through to durable fresh-wake delivery instead of waiting forever for
   // a command target that cannot return for this terminal run.
   if (!run || ["succeeded", "failed", "cancelled", "timed_out"].includes(run.status)) return "not_native";
-  const response = parseQuestionInteractionAnswers(interaction.payload.questionSet, interaction.result.answers);
+  const response = parseQuestionInteractionAnswers(interaction.payload.questionSet, interaction.result.answers, interaction.payload.questions);
   const target = activeTargets.get(run.id);
   if (
     !target
