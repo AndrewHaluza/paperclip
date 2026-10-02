@@ -1,9 +1,9 @@
 import { redactCommandText } from "@paperclipai/adapter-utils";
 import { isPublicExecutorToolSelector } from "@paperclipai/adapter-utils/command-redaction";
 
-const SECRET_FIELD_NAME_PATTERN = String.raw`[A-Za-z0-9_-]*(?:api[-_]?key|access[-_]?token|auth(?:_?token)?|token|authorization|bearer|secret|passwd|password|credential|jwt|private[-_]?key|cookie|connectionstring|browser[-_]?code|login[-_]?url)[A-Za-z0-9_-]*`;
+const SECRET_FIELD_NAME_PATTERN = String.raw`[A-Za-z0-9_-]*(?:api[-_]?key|access[-_]?token|auth(?:_?token)?|token|authorization(?:[-_]?code)?|bearer|secrets?|passwd|passwords?|credentials?|jwt|private[-_]?key|cookie|connectionstring|browser[-_]?code|login[-_]?url)(?:[-_]?value)?`;
 
-const SECRET_PAYLOAD_KEY_RE = new RegExp(SECRET_FIELD_NAME_PATTERN, "i");
+const SECRET_PAYLOAD_KEY_RE = new RegExp(`^(?:${SECRET_FIELD_NAME_PATTERN})(?:_plain|_ref)?$`, "i");
 // Authorization reasons are policy decision codes, not credentials. They must
 // remain visible in audit receipts even though the field name contains
 // "authorization". JWT-shaped values are still caught by the value guard below.
@@ -45,11 +45,9 @@ const COMMAND_PAYLOAD_KEY_RE =
   /(^command$|^cmd$|command[-_]?line|resolved[-_]?command|PAPERCLIP_RESOLVED_COMMAND)/i;
 const COMMAND_ARGS_PAYLOAD_KEY_RE = /^(commandArgs|command_?args|argv)$/i;
 const JWT_VALUE_RE =
-  /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
-// Durable protocol schema identifiers share JWT's broad dotted shape but are
-// public discriminators, not credentials. Exempt the Paperclip schema
-// namespace only in fields that actually declare a schema; the same value in
-// arbitrary provider data remains subject to the fail-closed JWT guard.
+  /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+// Public protocol discriminators are retained verbatim. A dotted identifier
+// alone is not a credential; JWT detection requires an encoded JSON header.
 const PAPERCLIP_SCHEMA_FIELDS = new Set(["schema", "runtimeSchema"]);
 export const PAPERCLIP_PUBLIC_SCHEMA_IDS = new Set([
   "paperclip.artifact.generated.v1",
@@ -712,6 +710,10 @@ function redactStandaloneBearerCredentials(input: string): string {
       }
     }
 
+    const candidate = input.slice(credentialStart, end);
+    // A short lowercase word after bearer is prose unless explicitly quoted.
+    // Named Authorization fields are already handled independently above.
+    if (/^[a-z]+[.]?$/.test(candidate) && candidate.length < 20) continue;
     if (credentialStart < copiedThrough) continue;
     parts.push(input.slice(copiedThrough, credentialStart), replacement);
     copiedThrough = end;
@@ -892,7 +894,7 @@ export function sanitizeRecord(
       continue;
     }
     if (
-      SECRET_PAYLOAD_KEY_RE.test(key) &&
+      (SECRET_PAYLOAD_KEY_RE.test(key) || AUDIT_COUNT_PAYLOAD_KEYS.has(key)) &&
       !AUDIT_REASON_PAYLOAD_KEY_RE.test(key) &&
       !isAuditCountField(key, value)
     ) {
@@ -911,9 +913,7 @@ export function sanitizeRecord(
       redacted[key] = REDACTED_EVENT_VALUE;
       continue;
     }
-    // Interpret a validated schema field before applying generic value-shape
-    // heuristics. The exemption is deliberately closed to this one PRP v1
-    // discriminator; the same dotted string in any other field is redacted.
+    // Preserve public protocol identities before scanning diagnostic values.
     if (isKnownPrpEventDiscriminator(record, key, value)) {
       redacted[key] = value;
       continue;

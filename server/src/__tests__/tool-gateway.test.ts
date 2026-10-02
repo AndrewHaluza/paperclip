@@ -2811,7 +2811,7 @@ rl.on("line", (line) => {
         .where(eq(activityLog.action, "tool_gateway.call_completed"));
       expect(activity.details).toMatchObject({
         headerSummary: {
-          credentialHeaderNames: "***REDACTED***",
+          credentialHeaderNames: ["authorization"],
           passthroughHeaderNames: ["x-client-request-id"],
           droppedPassthroughHeaderNames: expect.arrayContaining([
             "authorization",
@@ -2905,7 +2905,7 @@ rl.on("line", (line) => {
         .where(eq(activityLog.action, "tool_gateway.call_completed"));
       expect(activity.details).toMatchObject({
         headerSummary: {
-          credentialHeaderNames: "***REDACTED***",
+          credentialHeaderNames: [],
           passthroughHeaderNames: ["x-client-request-id"],
           droppedPassthroughHeaderNames: expect.arrayContaining([
             "authorization",

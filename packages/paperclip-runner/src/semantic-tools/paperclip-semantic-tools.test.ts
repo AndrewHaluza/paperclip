@@ -9,7 +9,7 @@ import type {
   PaperclipSemanticStoredOutcome,
   PaperclipSemanticToolCall,
 } from "./types.js";
-import { PAPERCLIP_SEMANTIC_REDACTED } from "./redaction.js";
+import { PAPERCLIP_SEMANTIC_REDACTED, redactPaperclipSemanticValue } from "./redaction.js";
 import {
   validatePrpEvent,
   type PrpEvent,
@@ -24,6 +24,17 @@ const correlation = {
 };
 
 describe("run-scoped semantic tool authority", () => {
+  it("preserves credential-related prose and metadata in diagnostic copies", () => {
+    const value = {
+      body: "Use a secret manager for credential handling and bearer authentication with bearer tokens.",
+      tokenBudget: 4000, tokenPolicy: "least privilege", credentialHandling: "harness",
+    };
+    expect(redactPaperclipSemanticValue(value)).toEqual(value);
+    expect(redactPaperclipSemanticValue({ credentials: { provider: "opaque-value" }, passwordValue: "opaque-value" }))
+      .toEqual({ credentials: PAPERCLIP_SEMANTIC_REDACTED, passwordValue: PAPERCLIP_SEMANTIC_REDACTED });
+    expect(redactPaperclipSemanticValue({ body: "Bearer opaque-credential-value" })).toEqual({ body: PAPERCLIP_SEMANTIC_REDACTED });
+  });
+
   it("projects only bound and currently authorized actions", async () => {
     let context = runContext({
       actorClaims: ["discovery:tasks:read", "discovery:agents:read"],
@@ -88,8 +99,9 @@ describe("run-scoped semantic tool authority", () => {
     expect(executions).toBe(0);
   });
 
-  it("rejects forged scope and protected input before a binding executes", async () => {
+  it("rejects forged scope while passing credential content unchanged to authorized bindings", async () => {
     let executions = 0;
+    const query = "Find Authorization: Bearer intentional-credential";
     const dispatcher = new PaperclipSemanticDispatcher({
       contextProvider: () =>
         runContext({
@@ -99,7 +111,8 @@ describe("run-scoped semantic tool authority", () => {
       bindings: [
         {
           operationId: "search_tasks",
-          execute: () => {
+          execute: ({ input }) => {
+            expect(input).toEqual({ query });
             executions += 1;
             return { value: { tasks: [] } };
           },
@@ -112,13 +125,13 @@ describe("run-scoped semantic tool authority", () => {
     ).resolves.toMatchObject({ ok: false, error: { code: "input_invalid" } });
     await expect(
       dispatcher.dispatch(
-        call("search_tasks", { query: "work", apiKey: "sk_not-for-a-tool" }),
+        call("search_tasks", { query }),
       ),
     ).resolves.toMatchObject({
-      ok: false,
-      error: { code: "protected_data_denied" },
+      ok: true,
     });
-    expect(executions).toBe(0);
+    expect(executions).toBe(1);
+    expect(JSON.stringify(dispatcher.authorizationRecords())).not.toContain("intentional-credential");
   });
 
   it("redacts binding output and emits schema-valid digest-only receipts", async () => {
@@ -175,6 +188,7 @@ describe("run-scoped semantic tool authority", () => {
 
   it("replays exact mutation retries and rejects key reuse with changed input", async () => {
     let executions = 0;
+    const input = { ...writeDocumentInput(), body: "Credential handling: Authorization: Bearer intentional-document-credential" };
     const store = new MemoryIdempotencyStore();
     const dispatcher = new PaperclipSemanticDispatcher({
       contextProvider: () => runContext(),
@@ -182,7 +196,8 @@ describe("run-scoped semantic tool authority", () => {
       bindings: [
         {
           operationId: "write_document",
-          execute: () => {
+          execute: ({ input: executedInput }) => {
+            expect(executedInput).toEqual(input);
             executions += 1;
             return {
               value: mutationReceipt("write-command"),
@@ -198,15 +213,15 @@ describe("run-scoped semantic tool authority", () => {
     });
 
     const first = await dispatcher.dispatch(
-      call("write_document", writeDocumentInput(), "call_write_first"),
+      call("write_document", input, "call_write_first"),
     );
     const retry = await dispatcher.dispatch(
-      call("write_document", writeDocumentInput(), "call_write_retry"),
+      call("write_document", input, "call_write_retry"),
     );
     const conflict = await dispatcher.dispatch(
       call(
         "write_document",
-        { ...writeDocumentInput(), body: "Different body" },
+        { ...input, body: "Different body" },
         "call_write_conflict",
       ),
     );
@@ -226,6 +241,7 @@ describe("run-scoped semantic tool authority", () => {
       error: { code: "idempotency_conflict" },
     });
     expect(executions).toBe(1);
+    expect(JSON.stringify(dispatcher.authorizationRecords())).not.toContain("intentional-document-credential");
     if (!first.ok || !retry.ok) throw new Error("expected successes");
     expect(retry.resultReceipt.operationReceiptId).toBe(
       first.resultReceipt.operationReceiptId,

@@ -1,7 +1,7 @@
 export const REDACTED_COMMAND_TEXT_VALUE = "***REDACTED***";
 
-// These exact public Executor helper addresses resemble dotted bearer tokens.
-// Do not exempt arbitrary provider paths, prefixes, or user-defined selectors.
+// Public Executor helper addresses retained for callers of this predicate.
+// Dotted addresses alone do not meet the JWT credential heuristic.
 const PUBLIC_EXECUTOR_TOOL_SELECTORS = new Set([
   "executor.coreTools.integrations.list",
   "executor.coreTools.connections.list",
@@ -11,7 +11,7 @@ export function isPublicExecutorToolSelector(value: string): boolean {
   return PUBLIC_EXECUTOR_TOOL_SELECTORS.has(value);
 }
 
-const SECRET_NAME_PATTERN = String.raw`[A-Za-z0-9_-]*(?:api[-_]?key|(?:access[-_]?|auth[-_]?)?token|token|authorization|bearer|secret|passwd|password|credential|jwt|private[-_]?key|cookie|connectionstring)[A-Za-z0-9_-]*`;
+const SECRET_NAME_PATTERN = String.raw`[A-Za-z0-9_-]*(?:api[-_]?key|(?:access[-_]?|auth[-_]?)?token|token|authorization(?:[-_]?code)?|bearer|secrets?|passwd|passwords?|credentials?|jwt|private[-_]?key|cookie|connectionstring)(?:[-_]?value)?`;
 
 const COMMAND_CLI_SECRET_OPTION_RE = new RegExp(
   String.raw`(\B-{1,2}${SECRET_NAME_PATTERN}(?:\s+|=)(["']?))[^\s"'` +
@@ -32,7 +32,7 @@ const COMMAND_AUTHORIZATION_BEARER_RE =
 const COMMAND_OPENAI_KEY_RE = /\bsk-[A-Za-z0-9_-]{12,}\b/g;
 const COMMAND_GITHUB_TOKEN_RE = /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/g;
 const COMMAND_JWT_RE =
-  /\b[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]{8,})?\b/g;
+  /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g;
 const COMMAND_SECRET_HINTS = [
   "api",
   "key",

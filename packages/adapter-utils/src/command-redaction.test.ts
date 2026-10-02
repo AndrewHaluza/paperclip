@@ -5,6 +5,16 @@ import {
 } from "./command-redaction.js";
 
 describe("redactDiagnosticText", () => {
+  it("preserves credential metadata and dotted identifiers", () => {
+    for (const text of [
+      '"tokenBudget":4000 --token-budget 4000 SECRET_STORAGE=vault',
+      '{"credentialHandling":"harness","authorizationRequired":true}',
+      "executor.customTools.integrations.list deployment.credentials.example.md api.openai.com",
+      "Use a private key and secret manager with credential handling.",
+      "Use bearer tokens and bearer authentication.",
+    ]) expect(redactDiagnosticText(text)).toBe(text);
+  });
+
   it("redacts a JSON secret field value", () => {
     const input = '{"token":"opaque-value","status":"error"}';
     const output = redactDiagnosticText(input);
