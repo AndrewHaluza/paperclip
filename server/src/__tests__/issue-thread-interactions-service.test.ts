@@ -213,6 +213,32 @@ describeEmbeddedPostgres("issueThreadInteractionService", () => {
     };
   }
 
+  it("persists and answers a canonical-only mixed question form", async () => {
+    const { companyId, issueId } = await seedSourceQuestionFixture({});
+    const questionSet = {
+      schema: "paperclip.question_set.v1" as const,
+      questions: [
+        { id: "repo", prompt: "Repository URL?", required: true, answerMode: "text" as const },
+        { id: "scope", prompt: "Review scope?", required: true, answerMode: "single_select" as const, options: [{ id: "all", label: "All changes" }, { id: "selected", label: "Selected changes" }] },
+        { id: "hosting", prompt: "Preview hosting?", required: true, answerMode: "multi_select" as const, options: [{ id: "existing", label: "Existing host" }, { id: "new", label: "New host" }] },
+      ],
+    };
+    const input = { kind: "ask_user_questions" as const, idempotencyKey: "canonical:mixed", payload: { version: 1 as const, questionSet } };
+    const issue = { id: issueId, companyId };
+    const created = await interactionsSvc.create(issue, input, { userId: "local-board" });
+    if (created.kind !== "ask_user_questions") throw new Error("expected questions");
+    expect(created.payload.questionSet).toEqual(questionSet);
+    expect(created.payload.questions.map((question) => question.id)).toEqual(["repo", "scope", "hosting"]);
+    expect(await interactionsSvc.create(issue, input, { userId: "local-board" })).toEqual(created);
+    await expect(interactionsSvc.answerQuestions(issue, created.id, { answers: [{ questionId: "repo", optionIds: [], otherText: "https://example.com/repo" }] }, { userId: "local-board" })).rejects.toThrow("requires an answer");
+    const answered = await interactionsSvc.answerQuestions(issue, created.id, { answers: [
+      { questionId: "repo", optionIds: [], otherText: "https://example.com/repo" },
+      { questionId: "scope", optionIds: ["all"] },
+      { questionId: "hosting", optionIds: ["existing", "new"] },
+    ] }, { userId: "local-board" });
+    expect(answered.status).toBe("answered");
+  });
+
   async function seedQuestionUser(companyId: string, userId: string, role = "member", status = "active") {
     await db.insert(authUsers).values({ id: userId, name: "Question recipient", email: `${randomUUID()}@example.test`, createdAt: new Date(), updatedAt: new Date() });
     await db.insert(companyMemberships).values({ companyId, principalType: "user", principalId: userId, membershipRole: role, status });

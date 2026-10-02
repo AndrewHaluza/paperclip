@@ -23,7 +23,7 @@ export function questionSetToAskUserQuestionsPayload(
       const freeTextOption = question.answerMode === "text"
         ? {
             id: "paperclip_text_answer",
-            label: question.header ?? "Type an answer",
+            label: question.header || "Type an answer",
             ...(question.textValidation?.inputType
               ? { description: `Expected ${question.textValidation.inputType} input` } : {}),
             freeText: true as const,
@@ -31,7 +31,7 @@ export function questionSetToAskUserQuestionsPayload(
         : question.customAnswer?.enabled
           ? {
               id: syntheticOptionId(options.map((option) => option.id), "paperclip_custom_answer"),
-              label: question.customAnswer.label ?? "Other",
+              label: question.customAnswer.label || "Other",
               ...(question.customAnswer.placeholder !== undefined
                 ? { description: question.customAnswer.placeholder } : {}),
               freeText: true as const,
