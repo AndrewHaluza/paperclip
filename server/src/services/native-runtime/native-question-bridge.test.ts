@@ -370,10 +370,10 @@ describeEmbeddedPostgres("native question bridge", () => {
     expect(await db.select().from(activityLog)).toHaveLength(1);
 
     const answer = { answers: [{ questionId: "color", optionIds: ["blue"] }] };
-    validateNativeQuestionResponseInput(interaction!, answer);
-    expect(() => validateNativeQuestionResponseInput(interaction!, {
+    await validateNativeQuestionResponseInput(interaction!, answer);
+    await expect(validateNativeQuestionResponseInput(interaction!, {
       answers: [{ questionId: "color", optionIds: ["red"] }],
-    })).toThrow(/unknown option red/);
+    })).rejects.toThrow(/unknown option red/);
 
     const answered = await issueThreadInteractionService(db).answerQuestions(
       { id: issueId, companyId, status: "in_progress" },
@@ -648,7 +648,7 @@ describeEmbeddedPostgres("native question bridge", () => {
         otherText: "purple",
       }],
     };
-    validateNativeQuestionResponseInput(interaction!, answer);
+    await validateNativeQuestionResponseInput(interaction!, answer);
     const answered = await issueThreadInteractionService(db).answerQuestions(
       { id: issueId, companyId, status: "in_progress" },
       interaction!.id,

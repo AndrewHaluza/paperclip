@@ -4898,7 +4898,7 @@ export function issueThreadInteractionService(
       });
       if (interaction.payload.questionSet) {
         try {
-          parseQuestionInteractionAnswers(interaction.payload.questionSet, normalizedAnswers, interaction.payload.questions);
+          await parseQuestionInteractionAnswers(interaction.payload.questionSet, normalizedAnswers, interaction.payload.questions);
         } catch (error) {
           throw unprocessable(
             error instanceof Error ? error.message : "Invalid question response",

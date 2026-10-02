@@ -1,12 +1,13 @@
 import type { AskUserQuestionsAnswer, AskUserQuestionsPayload, PaperclipQuestionSetPayload } from "@paperclipai/shared";
 import { parsePaperclipQuestionResponse, type PaperclipQuestionResponse } from "../vendor/paperclip-runner/index.js";
+import { validateQuestionPatterns } from "./question-pattern-validation.js";
 
 /** Validate storage answers against the persisted canonical form before resolution. */
-export function parseQuestionInteractionAnswers(
+export async function parseQuestionInteractionAnswers(
   questionSet: PaperclipQuestionSetPayload,
   answers: readonly AskUserQuestionsAnswer[],
   storageQuestions: AskUserQuestionsPayload["questions"],
-): PaperclipQuestionResponse {
+): Promise<PaperclipQuestionResponse> {
   const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
   const response: PaperclipQuestionResponse = {
     schema: "paperclip.question_response.v1",
@@ -45,5 +46,23 @@ export function parseQuestionInteractionAnswers(
       return question;
     }),
   };
-  return parsePaperclipQuestionResponse(answerableQuestionSet, response);
+  // The portable parser uses JavaScript regexes. Validate all other fields
+  // there, but run pattern matching only in a bounded, isolated worker.
+  const withoutPatterns = {
+    ...answerableQuestionSet,
+    questions: answerableQuestionSet.questions.map((question) => {
+      if (!question.textValidation) return question;
+      const { pattern: _pattern, ...textValidation } = question.textValidation;
+      return { ...question, textValidation };
+    }),
+  };
+  const parsed = parsePaperclipQuestionResponse(withoutPatterns, response);
+  const checks = answerableQuestionSet.questions.flatMap((question) => {
+    const pattern = question.textValidation?.pattern;
+    const answer = parsed.answers[question.id];
+    const text = question.answerMode === "text" ? answer?.text : answer?.customText;
+    return pattern !== undefined && text !== undefined ? [{ questionId: question.id, pattern, text }] : [];
+  });
+  await validateQuestionPatterns(checks);
+  return parsed;
 }
