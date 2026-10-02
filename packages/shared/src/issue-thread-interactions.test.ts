@@ -57,6 +57,20 @@ describe("issue thread interaction schemas", () => {
     expect(parsed.payload.questions[0]).toMatchObject({ prompt: "Review scope?", options: [{ label: "All changes" }, { label: "Selected changes" }] });
     expect(parsed.payload.questions[1].prompt).toBe("Repository URL?");
   });
+
+  it("rejects dual choice forms that disagree about written alternatives", () => {
+    const options = [{ id: "all", label: "All" }, { id: "selected", label: "Selected" }];
+    for (const storage of [
+      { options: [...options, { id: "other", label: "Other", freeText: true }] },
+      { options, allowOther: true },
+    ]) {
+      const parsed = createIssueThreadInteractionSchema.safeParse({ kind: "ask_user_questions", payload: { version: 1,
+        questions: [{ id: "scope", prompt: "Scope?", required: true, selectionMode: "single", ...storage }],
+        questionSet: { schema: "paperclip.question_set.v1", questions: [{ id: "scope", prompt: "Scope?", required: true, answerMode: "single_select", options }] },
+      } });
+      expect(parsed.success).toBe(false);
+    }
+  });
   it("defines canonical resolver policies and normalizes compatibility aliases", () => {
     expect(ISSUE_THREAD_INTERACTION_CANONICAL_RESOLVER_POLICIES).toEqual([
       "anyone",

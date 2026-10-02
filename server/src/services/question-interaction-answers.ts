@@ -32,6 +32,18 @@ export function parseQuestionInteractionAnswers(
       };
     }
   }
-  return parsePaperclipQuestionResponse(questionSet, response);
+  // Historical dual forms may offer a written answer only in storage. Keep
+  // that pending answer path usable; new creation rejects this mismatch.
+  const answerableQuestionSet = {
+    ...questionSet,
+    questions: questionSet.questions.map((question) => {
+      const storage = storageQuestions.find((entry) => entry.id === question.id);
+      if (question.answerMode !== "text" && !question.customAnswer
+        && (storage?.allowOther === true || storage?.options.some((option) => option.freeText))) {
+        return { ...question, customAnswer: { enabled: true as const } };
+      }
+      return question;
+    }),
+  };
+  return parsePaperclipQuestionResponse(answerableQuestionSet, response);
 }
-

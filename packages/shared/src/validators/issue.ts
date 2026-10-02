@@ -1940,6 +1940,8 @@ const createLegacyAskUserQuestionsPayloadSchema = askUserQuestionsPayloadSchema.
       const choices = storage.options.filter((option) => !option.freeText);
       const canonical = new Map((question.options ?? []).map((option) => [option.id, option.label.trim()]));
       if (choices.length !== canonical.size || choices.some((option) => canonical.get(option.id) !== option.label)) mismatch("options");
+      const allowsCustomAnswer = storage.allowOther === true || storage.options.some((option) => option.freeText);
+      if (Boolean(question.customAnswer?.enabled) !== allowsCustomAnswer) mismatch("customAnswer");
     }
   }
 });
