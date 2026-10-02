@@ -326,12 +326,18 @@ const support = await getEmbeddedPostgresTestSupport();
     else await expect(result).rejects.toThrow("continuation_user_authorization_missing");
   });
 
-  it.each(["valid", "wrong_actor", "consumed", "discarded", "operator_stop", "already_delivered", "earlier_delivered", "unstarted_cancelled", "unstarted_cancelled_metadata", "foreign_queue"])("validates automatic saved-message delivery: %s", async kind => {
+  it.each(["valid", "provider_cancel", "pending_tool", "unknown_cancel", "wrong_actor", "consumed", "discarded", "operator_stop", "already_delivered", "earlier_delivered", "unstarted_cancelled", "unstarted_cancelled_metadata", "foreign_queue"])("validates automatic saved-message delivery: %s", async kind => {
     const f = await seed();
     await db.update(agents).set({ adapterType: "claude_local" }).where(eq(agents.id, f.agentId));
     await db.delete(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.sourceRunId));
     await db.update(heartbeatRuns).set({ runtimeMode: "legacy", nativeIssueId: null,
-      status: kind === "operator_stop" ? "cancelled" : "failed",
+      status: ["operator_stop", "provider_cancel", "pending_tool", "unknown_cancel"].includes(kind) ? "cancelled" : "failed",
+      startedAt: new Date("2026-09-11T08:00:00Z"),
+      ...(["provider_cancel", "pending_tool"].includes(kind) ? { resultJson: {
+        acpToolInventoryComplete: true, acpPendingToolCount: kind === "pending_tool" ? 1 : 0,
+        cancellation: { source: "provider", expected: false, initiator: { type: "provider" },
+          reason: "Provider cancelled execution", recordedAt: new Date().toISOString() },
+      } } : {}),
       contextSnapshot: { issueId: f.issueId, ...(kind === "already_delivered" ? { wakeCommentIds: [f.commentId] } : {}) },
     }).where(eq(heartbeatRuns.id, f.sourceRunId));
     await db.update(issueRecoveryActions).set({ cause: "legacy_execution_requires_reconciliation" })
@@ -367,7 +373,7 @@ const support = await getEmbeddedPostgresTestSupport();
       return admitExplicitNativeContinuation({ ...f, actorId: kind === "wrong_actor" ? "someone-else" : f.actorId,
         db: tx as unknown as typeof db, queuedCommentRequestId: queueId, dryRun: true });
     });
-    if (kind === "valid" || kind.startsWith("unstarted_cancelled")) expect(result).toMatchObject({ previousRunId: f.sourceRunId, commentId: f.commentId });
+    if (kind === "valid" || kind === "provider_cancel" || kind.startsWith("unstarted_cancelled")) expect(result).toMatchObject({ previousRunId: f.sourceRunId, commentId: f.commentId });
     else expect(result).toBeNull();
   });
 
@@ -377,6 +383,41 @@ const support = await getEmbeddedPostgresTestSupport();
     if (result && !dryRun) await tx.insert(heartbeatRuns).values({ id: f.successorRunId, companyId: f.companyId,
       agentId: f.agentId, status: "queued", contextSnapshot: { issueId: f.issueId, previousRunId: result.previousRunId, forceFreshSession: true } });
     return result;
+  });
+
+  it("delivers saved messages once after provider cancellation, preserving source history", async () => {
+    const f = await seed();
+    await db.update(agents).set({ adapterType: "claude_local" }).where(eq(agents.id, f.agentId));
+    // Hold agent capacity so the test observes durable admission without launching a provider.
+    await db.insert(heartbeatRuns).values({ companyId: f.companyId, agentId: f.agentId, status: "running" });
+    await db.delete(nativeRunFinalizations).where(eq(nativeRunFinalizations.runId, f.sourceRunId));
+    const resultJson = { status: "cancelled", acpToolInventoryComplete: true, acpPendingToolCount: 0,
+      cancellation: { source: "provider", expected: false, initiator: { type: "provider" },
+        reason: "Provider cancelled execution", recordedAt: new Date().toISOString() },
+      completedAction: "preserve-this-record" };
+    await db.update(heartbeatRuns).set({ runtimeMode: "legacy", status: "cancelled", nativeIssueId: null,
+      startedAt: new Date("2026-09-11T08:00:00Z"), resultJson,
+    }).where(eq(heartbeatRuns.id, f.sourceRunId));
+    await db.update(issueRecoveryActions).set({ cause: "legacy_execution_requires_reconciliation" })
+      .where(eq(issueRecoveryActions.sourceIssueId, f.issueId));
+    const queueId = randomUUID();
+    await db.insert(agentWakeupRequests).values({ id: queueId, companyId: f.companyId, agentId: f.agentId,
+      source: "automation", reason: "issue_commented", status: "deferred_issue_execution",
+      requestedByActorType: "user", requestedByActorId: f.actorId, updatedAt: new Date(0),
+      payload: { issueId: f.issueId, commentId: f.commentId, executionWait: { reason: "execution_recovery" },
+        _paperclipWakeContext: { issueId: f.issueId, wakeReason: "issue_commented", wakeCommentIds: [f.commentId], wakeCommentId: f.commentId } },
+    });
+    expect(await getExecutionBlocker(db, f.companyId, f.issueId)).toMatchObject({ savedMessageCount: 1, canContinue: true });
+    await Promise.all([heartbeatService(db).resumeExecutionWaitComments(), heartbeatService(db).resumeExecutionWaitComments()]);
+    await heartbeatService(db).resumeExecutionWaitComments();
+    const runs = await db.select().from(heartbeatRuns).where(and(eq(heartbeatRuns.companyId, f.companyId), eq(heartbeatRuns.status, "queued")));
+    expect(runs).toHaveLength(1);
+    expect(runs[0].contextSnapshot).toMatchObject({ forceFreshSession: true, previousRunId: f.sourceRunId, wakeCommentIds: [f.commentId] });
+    const [queue] = await db.select().from(agentWakeupRequests).where(eq(agentWakeupRequests.id, queueId));
+    expect(queue).toMatchObject({ status: "coalesced", runId: runs[0].id });
+    expect(await getExecutionBlocker(db, f.companyId, f.issueId)).toBeNull();
+    const [source] = await db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, f.sourceRunId));
+    expect(source.resultJson).toEqual(resultJson);
   });
 
   it.each(["verified", "unproven", "changed", "dry_run", "retry", "duplicate"])(
