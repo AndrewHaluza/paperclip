@@ -20,8 +20,8 @@ vi.mock("@/api/artifacts", () => ({ artifactsApi: { list: api.artifactsList } })
 vi.mock("@/api/projects", () => ({ projectsApi: { list: async () => [] } }));
 vi.mock("@/components/IssueFiltersPopover", () => ({ IssueFiltersPopover: () => <button type="button">Filters</button> }));
 vi.mock("@/lib/router", () => ({
-  Link: ({ to, children, className }: { to: string; children: ReactNode; className?: string }) =>
-    <a href={to} className={className}>{children}</a>,
+  Link: ({ to, children, className, target, rel }: { to: string; children: ReactNode; className?: string; target?: string; rel?: string }) =>
+    <a href={to} className={className} target={target} rel={rel}>{children}</a>,
 }));
 
 function task(overrides: Partial<Issue>): Issue {
@@ -93,6 +93,7 @@ describe("agent work panels", () => {
     expect(api.issuesList).toHaveBeenCalledWith("company-1", expect.objectContaining({ participantAgentId: "agent-1" }));
     const cards = Array.from(container.querySelectorAll("a"));
     expect(cards.map((card) => card.getAttribute("href"))).toEqual(["/issues/PAP-3", "/issues/PAP-1"]);
+    expect(cards.every((card) => card.getAttribute("target") === "_blank")).toBe(true);
     expect(cards[0]?.textContent).toContain("Newer task");
     expect(cards[0]?.textContent).toContain("PAP-3");
     expect(container.querySelector("time")).not.toBeNull();
@@ -121,6 +122,7 @@ describe("agent work panels", () => {
     const cards = Array.from(container.querySelectorAll("a"));
     expect(cards).toHaveLength(1);
     expect(cards[0]?.getAttribute("href")).toBe("/PAP/issues/PAP-9#document-report");
+    expect(cards[0]?.getAttribute("target")).toBe("_blank");
     expect(cards[0]?.textContent).toContain("plan.md");
     expect(cards[0]?.textContent).toContain("PAP-9");
     expect(cards[0]?.textContent).toContain("Updated");

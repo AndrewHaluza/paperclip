@@ -78,6 +78,8 @@ export function AgentTaskCard({ task }: { task: Issue }) {
       // design-allow(card-pattern): navigation <Link> card; Card renders a div and would break anchor semantics
       to={`/issues/${task.identifier ?? task.id}`}
       disableIssueQuicklook
+      target="_blank"
+      rel="noreferrer"
       data-testid="agent-task-card"
       className={cardClassName}
     >
@@ -242,6 +244,8 @@ export function AgentArtifactCard({ artifact }: { artifact: CompanyArtifact }) {
       // design-allow(card-pattern): navigation <Link> card; Card renders a div and would break anchor semantics
       to={artifact.href}
       disableIssueQuicklook
+      target="_blank"
+      rel="noreferrer"
       data-testid="agent-artifact-card"
       className={cardClassName}
     >
