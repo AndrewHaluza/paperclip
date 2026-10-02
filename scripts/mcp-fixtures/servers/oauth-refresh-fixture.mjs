@@ -74,6 +74,9 @@ export async function startOAuthRefreshFixture({
           const parsed = new URL(uri);
           return parsed.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(parsed.hostname);
         })) return fail(res, "invalid_redirect_uri");
+        const requestedGrantTypes = metadata.grant_types ?? ["authorization_code"];
+        if (!Array.isArray(requestedGrantTypes) || requestedGrantTypes.some((type) => !grantTypes.includes(type))) return fail(res, "invalid_client_metadata");
+        metadata.grant_types = requestedGrantTypes;
         const clientId = `fixture-client-${randomUUID()}`;
         clients.set(clientId, metadata);
         events.push({ kind: "registration", grantTypes: metadata.grant_types });
@@ -99,7 +102,7 @@ export async function startOAuthRefreshFixture({
         callback.searchParams.set("iss", issuer());
         if (params.get("decision") !== "allow") callback.searchParams.set("error", "access_denied");
         else {
-          const offline = scopes.includes("offline_access") && params.get("prompt")?.split(/\s+/).includes("consent") && client.grant_types.includes("refresh_token");
+          const offline = grantTypes.includes("refresh_token") && scopes.includes("offline_access") && params.get("prompt")?.split(/\s+/).includes("consent") && client.grant_types.includes("refresh_token");
           const code = `fixture-code-${randomUUID()}`;
           codes.set(code, {
             clientId, redirectUri, resource: resource(), codeChallenge: params.get("code_challenge"),
@@ -112,6 +115,7 @@ export async function startOAuthRefreshFixture({
         res.end();
       } else if (path === "/identity/acme/token" && req.method === "POST") {
         const grantType = form.get("grant_type");
+        if (!grantTypes.includes(grantType)) return fail(res, "unsupported_grant_type");
         let grant;
         if (grantType === "authorization_code") {
           const code = form.get("code");

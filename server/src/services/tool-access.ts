@@ -8809,6 +8809,15 @@ export function toolAccessService(
         !sameOAuthIssuer(advertisedIssuer, candidate.issuer)
       )
         continue;
+      // A document can carry its own endpoints and also list other servers.
+      // Adopt capabilities only from metadata bound to the selected endpoints
+      // and issuer; otherwise offline access could break an unrelated sign-in.
+      if (
+        (authorizationUrl && candidateAuthorizationUrl !== authorizationUrl) ||
+        (tokenUrl && candidateTokenUrl !== tokenUrl) ||
+        (issuer && !sameOAuthIssuer(issuer, advertisedIssuer ?? candidate.issuer))
+      )
+        continue;
       authorizationUrl = authorizationUrl ?? candidateAuthorizationUrl;
       tokenUrl = tokenUrl ?? candidateTokenUrl;
       registrationUrl =

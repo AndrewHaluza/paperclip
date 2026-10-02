@@ -973,7 +973,55 @@ describeEmbeddedPostgres("generic remote MCP connections", () => {
       const callback = await approveFixtureAuthorization(start.authorizationUrl);
       expect(callback.searchParams.has("code")).toBe(true);
       expect(fixture.events.find((event) => event.kind === "authorization").offline).toBe(false);
+      const completed = await service.completeOAuthCallback({
+        state: callback.searchParams.get("state")!, code: callback.searchParams.get("code")!,
+        iss: callback.searchParams.get("iss")!, redirectUri: "http://127.0.0.1:3100/api/tools/oauth/callback",
+        actor: { actorType: "user", actorId: "board-user" },
+      });
+      expect(completed.connection.status).toBe("active");
+      expect(completed.connection.credentialSecretRefs.some((ref) => ref.configPath === "oauth.access_token")).toBe(true);
+      expect(completed.connection.credentialSecretRefs.some((ref) => ref.configPath === "oauth.refresh_token")).toBe(false);
     } finally { await fixture.close(); }
+  });
+
+  it.each([
+    { name: "different authorization endpoint", authorizationUrl: `${ISSUER}/other-authorize`, tokenUrl: `${ISSUER}/token`, issuer: ISSUER, offline: false },
+    { name: "different token endpoint", authorizationUrl: `${ISSUER}/authorize`, tokenUrl: `${ISSUER}/other-token`, issuer: ISSUER, offline: false },
+    { name: "different issuer", authorizationUrl: `${ISSUER}/authorize`, tokenUrl: `${ISSUER}/token`, issuer: `${MCP_ORIGIN}/tenant/other`, offline: false },
+    { name: "matching endpoints and issuer", authorizationUrl: `${ISSUER}/authorize`, tokenUrl: `${ISSUER}/token`, issuer: ISSUER, offline: true },
+  ])("binds offline support to the selected OAuth server: $name", async (candidate) => {
+    const fixture = installMcpOAuthFixture({ auth: "oauth" });
+    const originalFetch = fixture.fetchMock.getMockImplementation()!;
+    fixture.fetchMock.mockImplementation(async (url, init) => {
+      const href = String(url);
+      if (href === `${MCP_ORIGIN}/.well-known/oauth-protected-resource/mcp`) {
+        return jsonResponse({
+          resource: MCP_URL, issuer: ISSUER, authorization_servers: [candidate.issuer],
+          authorization_endpoint: `${ISSUER}/authorize`, token_endpoint: `${ISSUER}/token`,
+          registration_endpoint: `${ISSUER}/register`, scopes_supported: ["mcp:read"],
+          code_challenge_methods_supported: ["S256"], token_endpoint_auth_methods_supported: ["none"],
+        });
+      }
+      const issuerPath = new URL(candidate.issuer).pathname;
+      if (href === `${MCP_ORIGIN}/.well-known/oauth-authorization-server${issuerPath}`) {
+        return jsonResponse({
+          issuer: candidate.issuer, authorization_endpoint: candidate.authorizationUrl,
+          token_endpoint: candidate.tokenUrl, scopes_supported: ["mcp:read", "offline_access"],
+          grant_types_supported: ["authorization_code", "refresh_token"],
+        });
+      }
+      return originalFetch(url, init);
+    });
+    const company = await createCompany(db);
+    const service = toolAccessService(db);
+    const connected = await service.connectGalleryApp(company.id, { link: MCP_URL });
+    const start = await service.startOAuth(company.id, connected.connectionId, {
+      redirectUri: REDIRECT_URI, actor: { actorType: "user", actorId: "board-user" },
+    });
+    const url = new URL(start.authorizationUrl);
+    expect(url.origin + url.pathname).toBe(`${ISSUER}/authorize`);
+    expect(url.searchParams.get("scope")).toBe(candidate.offline ? "mcp:read offline_access" : "mcp:read");
+    expect(url.searchParams.get("prompt")).toBe(candidate.offline ? "consent" : null);
   });
 
   it("discovers offline refresh support when reconnecting a legacy connection with cached endpoints", async () => {
