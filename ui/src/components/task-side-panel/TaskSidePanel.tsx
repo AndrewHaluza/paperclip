@@ -21,6 +21,7 @@ import {
   FileText,
   FolderOpen,
   Lightbulb,
+  ListChecks,
   ListTree,
   Plus,
   SlidersHorizontal,
@@ -29,6 +30,7 @@ import { fileResourcesApi } from "@/api/file-resources";
 import { IssueProperties } from "@/components/IssueProperties";
 import { PROPERTIES_PANE_HEADER_SLOT_ID } from "@/components/PropertiesPanel";
 import { WorkspaceFileBrowser } from "@/components/WorkspaceFileBrowser";
+import { AgentArtifactsPanel, AgentTasksPanel } from "@/components/chat/AgentWorkPanels";
 import { IssuePropertiesArtifactsTab } from "@/components/issue-properties/IssuePropertiesArtifactsTab";
 import { IssuePropertiesPlansTab } from "@/components/issue-properties/IssuePropertiesPlansTab";
 import { TaskDetailSubtasksPanel } from "@/components/task-detail/TaskDetailRelationsPanel";
@@ -63,6 +65,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { useLocation, useNavigate } from "@/lib/router";
 import {
   readTaskSidePanelState,
+  taskPanelAgentTasksTab,
   taskPanelArtifactsTab,
   taskPanelAttachmentTab,
   taskPanelDocumentTab,
@@ -118,6 +121,7 @@ function tabIcon(tab: SidePanelTabRecord<TaskSidePanelTabPayload>): ReactNode {
     case "properties": return <SlidersHorizontal />;
     case "subtasks": return <ListTree />;
     case "artifacts": return <Box />;
+    case "agent-tasks": return <ListChecks />;
     case "attachment": return <FileText />;
     case "files-browser": return <FolderOpen />;
     case "workspace-file": return <FileCode2 />;
@@ -249,6 +253,10 @@ export function TaskSidePanel({
   onSkillOpened,
 }: TaskSidePanelProps) {
   const handleScroll = useScrollbarWhileScrolling();
+  // Agent chats swap the conversation issue's own panels for agent-scoped
+  // ones: the agent's tasks lead, and Artifacts lists the agent's output.
+  const conversationAgentId = issue.conversationAgentId ?? null;
+  const showRelatedTasks = showSubtasksTab && !conversationAgentId;
   const viewer = useTaskSidePanelFileRouting();
   const { data: documentsData } = useIssueDocuments(issue.id);
   const documents = documentsData ?? EMPTY_ISSUE_DOCUMENTS;
@@ -258,7 +266,7 @@ export function TaskSidePanel({
   );
   const taskCount = tasksTab?.count ?? childIssues.length;
   const taskLabel = tasksTab ? "Tasks" : "Subtasks";
-  const initialSubtasksAvailableRef = useRef(showSubtasksTab && (taskCount > 0 || tasksTab?.hasError === true));
+  const initialSubtasksAvailableRef = useRef(showRelatedTasks && (taskCount > 0 || tasksTab?.hasError === true));
   const subtasksDismissedRef = useRef(
     restoredRef.current?.userInteracted === true
       && restoredRef.current.state.tabs.length === 0,
@@ -273,7 +281,12 @@ export function TaskSidePanel({
   const handledDocumentRequestRef = useRef<number | undefined>(undefined);
   const initialState = useMemo(() => {
     const restored = restoredRef.current?.state;
-    let tabs = restored?.tabs ?? (issue.conversationAgentId ? [taskPanelArtifactsTab()] : [taskPanelPropertiesTab()]);
+    let tabs = restored?.tabs ?? (conversationAgentId ? [taskPanelAgentTasksTab()] : [taskPanelPropertiesTab()]);
+    // Chats used to open on Artifacts by default; move an untouched default
+    // onto the agent's tasks instead of keeping the retired layout forever.
+    if (conversationAgentId && tabs.length === 1 && tabs[0]!.id === "artifacts") {
+      tabs = [taskPanelAgentTasksTab()];
+    }
     if (!initialSubtasksAvailableRef.current) {
       tabs = tabs.filter((tab) => tab.payload.kind !== "subtasks");
     } else if (!subtasksDismissedRef.current) {
@@ -299,7 +312,7 @@ export function TaskSidePanel({
   }, [accountScope, issue.companyId, issue.id, launcherOpen]);
   const controller = useSidePanelTabs<TaskSidePanelTabPayload>({ initialState, onStateChange: persist });
   const activeTab = controller.tabs.find((tab) => tab.id === controller.activeTabId) ?? null;
-  const subtasksAvailable = showSubtasksTab && (taskCount > 0 || tasksTab?.hasError === true);
+  const subtasksAvailable = showRelatedTasks && (taskCount > 0 || tasksTab?.hasError === true);
   const hasSubtasksTab = controller.tabs.some((tab) => tab.id === "subtasks");
 
   useEffect(() => {
@@ -516,7 +529,11 @@ export function TaskSidePanel({
   }), [controller.tabs, documentByKey, taskCount, taskLabel, tasksTab]);
 
   const launcherSections = useMemo<SidePanelLauncherSection[]>(() => {
-    const primary: SidePanelLauncherItem[] = [
+    const primary: SidePanelLauncherItem[] = conversationAgentId ? [
+      { id: "agent-tasks", label: "Tasks", description: "Tasks this agent worked on", icon: <ListChecks />, alreadyOpen: controller.tabs.some((tab) => tab.id === "agent-tasks") },
+      { id: "artifacts", label: "Artifacts", description: "Files this agent produced", icon: <Box />, alreadyOpen: controller.tabs.some((tab) => tab.id === "artifacts") },
+      { id: "properties", label: "Properties", icon: <SlidersHorizontal />, alreadyOpen: controller.tabs.some((tab) => tab.id === "properties") },
+    ] : [
       { id: "properties", label: "Properties", icon: <SlidersHorizontal />, alreadyOpen: controller.tabs.some((tab) => tab.id === "properties") },
       ...(subtasksAvailable ? [{ id: "subtasks", label: taskLabel, description: tasksTab?.hasError ? "Could not load all tasks" : `${taskCount} total`, icon: <ListTree />, alreadyOpen: controller.tabs.some((tab) => tab.id === "subtasks") }] : []),
       { id: "artifacts", label: "Artifacts", icon: <Box />, alreadyOpen: controller.tabs.some((tab) => tab.id === "artifacts") },
@@ -568,7 +585,7 @@ export function TaskSidePanel({
       });
     }
     return sections;
-  }, [taskCount, taskLabel, tasksTab?.hasError, controller.tabs, documents, fileTabsEnabled, planDocument, recentFilesQuery.data, recentFilesQuery.isError, recentFilesQuery.isLoading, subtasksAvailable]);
+  }, [conversationAgentId, taskCount, taskLabel, tasksTab?.hasError, controller.tabs, documents, fileTabsEnabled, planDocument, recentFilesQuery.data, recentFilesQuery.isError, recentFilesQuery.isLoading, subtasksAvailable]);
 
   function selectLauncherItem(item: SidePanelLauncherItem) {
     markInteracted();
@@ -581,6 +598,7 @@ export function TaskSidePanel({
       });
     }
     else if (item.id === "artifacts") controller.openTab(taskPanelArtifactsTab());
+    else if (item.id === "agent-tasks") controller.openTab(taskPanelAgentTasksTab());
     else if (item.id === "files") {
       controller.openTab(taskPanelFilesTab());
       viewer.openBrowse();
@@ -672,6 +690,12 @@ export function TaskSidePanel({
         issueLinkState={issueLinkState}
       />
     );
+  } else if (activeTab.payload.kind === "agent-tasks") {
+    content = conversationAgentId ? (
+      <AgentTasksPanel companyId={issue.companyId} agentId={conversationAgentId} excludeIssueId={issue.id} />
+    ) : null;
+  } else if (activeTab.payload.kind === "artifacts" && conversationAgentId) {
+    content = <AgentArtifactsPanel companyId={issue.companyId} agentId={conversationAgentId} />;
   } else if (activeTab.payload.kind === "artifacts") {
     content = <TextAttachmentContext.Provider value={(id, title) => {
       markInteracted();

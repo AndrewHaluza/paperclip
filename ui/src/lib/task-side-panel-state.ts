@@ -33,6 +33,7 @@ export type TaskSidePanelTabPayload =
   | { kind: "properties" }
   | { kind: "subtasks" }
   | { kind: "artifacts" }
+  | { kind: "agent-tasks" }
   | { kind: "attachment"; attachmentId: string }
   | { kind: "skill"; skillId: string }
   | { kind: "issue-document"; documentKey: string }
@@ -92,6 +93,7 @@ function parsePayload(value: unknown): TaskSidePanelTabPayload | null {
   if (kind === "properties") return { kind };
   if (kind === "subtasks") return { kind };
   if (kind === "artifacts") return { kind };
+  if (kind === "agent-tasks") return { kind };
   if (kind === "attachment") {
     return typeof input.attachmentId === "string" && input.attachmentId.length > 0 ? { kind, attachmentId: input.attachmentId } : null;
   }
@@ -221,6 +223,11 @@ export function taskPanelPropertiesTab(): SidePanelTabRecord<TaskSidePanelTabPay
 
 export function taskPanelSubtasksTab(): SidePanelTabRecord<TaskSidePanelTabPayload> {
   return { id: "subtasks", type: "subtasks", label: "Subtasks", closable: true, contentMode: "padded", payload: { kind: "subtasks" } };
+}
+
+/** Agent chats only: every task the conversation's agent has worked on. */
+export function taskPanelAgentTasksTab(): SidePanelTabRecord<TaskSidePanelTabPayload> {
+  return { id: "agent-tasks", type: "agent-tasks", label: "Tasks", closable: true, contentMode: "padded", payload: { kind: "agent-tasks" } };
 }
 
 export function taskPanelArtifactsTab(): SidePanelTabRecord<TaskSidePanelTabPayload> {
